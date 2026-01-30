@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/staticwebapp.config.json",
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.svg", "/*.ico", "/*.png", "/*.jpg", "/*.js", "/*.css", "/api/*"]
+    "exclude": ["/assets/*", "/api/*", "*.js", "*.css", "*.svg", "*.ico", "*.png", "*.jpg", "*.woff", "*.woff2"]
   },
   "routes": [
     {
@@ -19,7 +19,7 @@
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' /api/*",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'",
     "Referrer-Policy": "strict-origin-when-cross-origin"
   },
   "mimeTypes": {
