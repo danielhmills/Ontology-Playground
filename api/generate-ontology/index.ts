@@ -1,5 +1,13 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 
+interface OpenAIResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
 const SYSTEM_PROMPT = `You are an expert ontology extraction system. Given a business scenario description, extract entities, relationships, and properties to create a complete ontology.
 
 Output ONLY valid JSON matching this exact schema:
@@ -19,7 +27,8 @@ Output ONLY valid JSON matching this exact schema:
           "unit": "string - optional unit like USD, kg, etc."
         }
       ],
-      "icon": "string - single emoji representing this entity"
+      "icon": "string - single emoji representing this entity",
+      "color": "string - hex color code like #0078D4, #107C10, #5C2D91, #FFB900, #D83B01, #00A9E0"
     }
   ],
   "relationships": [
@@ -41,7 +50,8 @@ Rules:
 4. Use appropriate cardinality based on business logic
 5. Generate descriptive relationship names (verbs like "places", "contains", "manages")
 6. Use relevant emojis for icons
-7. Output ONLY the JSON, no explanations`;
+7. Assign unique hex colors to each entity (use Microsoft palette: #0078D4, #107C10, #5C2D91, #FFB900, #D83B01, #00A9E0, #8764B8, #00B294)
+8. Output ONLY the JSON, no explanations`;
 
 const generateOntology: AzureFunction = async function (
   context: Context,
@@ -100,7 +110,7 @@ const generateOntology: AzureFunction = async function (
       return;
     }
 
-    const data = await response.json();
+    const data = await response.json() as OpenAIResponse;
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {

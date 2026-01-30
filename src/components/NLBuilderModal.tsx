@@ -39,6 +39,14 @@ export function NLBuilderModal({ onClose }: NLBuilderModalProps) {
       }
       
       const { ontology } = await response.json();
+      
+      // Assign default colors if missing
+      const defaultColors = ['#0078D4', '#107C10', '#5C2D91', '#FFB900', '#D83B01', '#00A9E0', '#8764B8', '#00B294'];
+      ontology.entityTypes = ontology.entityTypes.map((entity: { color?: string }, index: number) => ({
+        ...entity,
+        color: entity.color || defaultColors[index % defaultColors.length]
+      }));
+      
       setGeneratedOntology(ontology);
       setEditedJson(JSON.stringify(ontology, null, 2));
       setStep('preview');

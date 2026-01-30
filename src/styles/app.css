@@ -1030,6 +1030,37 @@ body {
   width: 90vw;
 }
 
+.nl-builder-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.nl-builder-modal .modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.nl-builder-modal .modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.nl-builder-modal .modal-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
 .nl-input-textarea {
   width: 100%;
   min-height: 120px;
@@ -1188,7 +1219,7 @@ body {
   margin-top: 20px;
 }
 
-.btn-primary {
+.preview-actions .btn-primary {
   flex: 1;
   padding: 12px 24px;
   background: var(--accent);
@@ -1200,11 +1231,11 @@ body {
   cursor: pointer;
 }
 
-.btn-primary:hover {
+.preview-actions .btn-primary:hover {
   background: #106ebe;
 }
 
-.btn-secondary {
+.preview-actions .btn-secondary {
   flex: 1;
   padding: 12px 24px;
   background: transparent;
@@ -1215,7 +1246,7 @@ body {
   cursor: pointer;
 }
 
-.btn-secondary:hover {
+.preview-actions .btn-secondary:hover {
   background: var(--bg-tertiary);
 }
 
