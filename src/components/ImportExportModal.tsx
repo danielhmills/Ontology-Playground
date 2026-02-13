@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
+import { serializeToRDF } from '../lib/rdf/serializer';
+import { parseRDF, RDFParseError } from '../lib/rdf/parser';
 import type { Ontology, DataBinding } from '../data/ontology';
 
 interface ImportExportModalProps {
@@ -54,22 +56,33 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
     reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        const parsed = JSON.parse(content);
-        
-        // Validate structure
-        if (!parsed.ontology || !parsed.ontology.entityTypes || !parsed.ontology.relationships) {
-          throw new Error('Invalid ontology structure. Must have ontology.entityTypes and ontology.relationships.');
-        }
+        const fileName = file.name.toLowerCase();
+        const isRdf = fileName.endsWith('.rdf') || fileName.endsWith('.owl');
+        const isXml = !isRdf && content.trimStart().startsWith('<?xml') || content.trimStart().startsWith('<rdf:RDF');
 
-        const ontology: Ontology = parsed.ontology;
-        const bindings: DataBinding[] = parsed.bindings || [];
+        let ontology: Ontology;
+        let bindings: DataBinding[] = [];
+
+        if (isRdf || isXml) {
+          // Parse as RDF/OWL
+          const result = parseRDF(content);
+          ontology = result.ontology;
+          bindings = result.bindings;
+        } else {
+          // Parse as JSON
+          const parsed = JSON.parse(content);
+
+          if (!parsed.ontology || !parsed.ontology.entityTypes || !parsed.ontology.relationships) {
+            throw new Error('Invalid ontology structure. Must have ontology.entityTypes and ontology.relationships.');
+          }
+
+          ontology = parsed.ontology;
+          bindings = parsed.bindings || [];
+        }
 
         // Basic validation
         if (!ontology.name) {
           throw new Error('Ontology must have a name.');
-        }
-        if (!Array.isArray(ontology.entityTypes) || ontology.entityTypes.length === 0) {
-          throw new Error('Ontology must have at least one entity type.');
         }
 
         loadOntology(ontology, bindings);
@@ -80,7 +93,11 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
         setTimeout(() => onClose(), 1500);
       } catch (err) {
         setImportStatus('error');
-        setErrorMessage(err instanceof Error ? err.message : 'Failed to parse JSON file');
+        if (err instanceof RDFParseError) {
+          setErrorMessage(`RDF parse error: ${err.message}`);
+        } else {
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to parse file');
+        }
       }
     };
     reader.readAsText(file);
@@ -100,7 +117,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
       mimeType = 'text/csv';
       extension = 'csv';
     } else if (exportFormat === 'rdf') {
-      content = exportAsRDF();
+      content = serializeToRDF(currentOntology, dataBindings);
       mimeType = 'application/rdf+xml';
       extension = 'rdf';
     } else {
@@ -195,153 +212,6 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
     }
 
     return csv;
-  };
-
-  // Export as RDF/XML format for MS Fabric integration
-  const exportAsRDF = (): string => {
-    const ontologyName = currentOntology.name.toLowerCase().replace(/\s+/g, '-');
-    const baseUri = `http://example.org/ontology/${ontologyName}/`;
-    
-    // Helper to escape XML special characters
-    const escapeXml = (str: string): string => {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-    };
-    
-    // Helper to capitalize first letter
-    const capitalize = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
-    
-    // Map property types to XSD datatypes
-    const xsdTypeMap: Record<string, string> = {
-      'string': 'xsd:string',
-      'integer': 'xsd:integer',
-      'decimal': 'xsd:decimal',
-      'date': 'xsd:date',
-      'datetime': 'xsd:dateTime',
-      'boolean': 'xsd:boolean',
-      'enum': 'xsd:string'
-    };
-    
-    let rdf = '';
-    
-    // XML declaration
-    rdf += '<?xml version="1.0" encoding="UTF-8"?>\n';
-    
-    // RDF root element with namespace declarations
-    rdf += '<rdf:RDF\n';
-    rdf += `    xml:base="${baseUri}"\n`;
-    rdf += '    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"\n';
-    rdf += '    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"\n';
-    rdf += '    xmlns:owl="http://www.w3.org/2002/07/owl#"\n';
-    rdf += '    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"\n';
-    rdf += `    xmlns:ont="${baseUri}">\n\n`;
-    
-    // Ontology declaration
-    rdf += `    <owl:Ontology rdf:about="${baseUri}">\n`;
-    rdf += `        <rdfs:label>${escapeXml(currentOntology.name)}</rdfs:label>\n`;
-    if (currentOntology.description) {
-      rdf += `        <rdfs:comment>${escapeXml(currentOntology.description)}</rdfs:comment>\n`;
-    }
-    rdf += '    </owl:Ontology>\n\n';
-    
-    // Entity Types as OWL Classes
-    rdf += '    <!-- ===================== -->\n';
-    rdf += '    <!-- Entity Types (Classes) -->\n';
-    rdf += '    <!-- ===================== -->\n\n';
-    
-    for (const entity of currentOntology.entityTypes) {
-      const className = capitalize(entity.id);
-      rdf += `    <owl:Class rdf:about="${baseUri}${className}">\n`;
-      rdf += `        <rdfs:label>${escapeXml(entity.name)}</rdfs:label>\n`;
-      if (entity.description) {
-        rdf += `        <rdfs:comment>${escapeXml(entity.description)}</rdfs:comment>\n`;
-      }
-      rdf += '    </owl:Class>\n\n';
-    }
-    
-    // Data Properties (entity properties)
-    rdf += '    <!-- ================ -->\n';
-    rdf += '    <!-- Data Properties -->\n';
-    rdf += '    <!-- ================ -->\n\n';
-    
-    for (const entity of currentOntology.entityTypes) {
-      const className = capitalize(entity.id);
-      
-      for (const prop of entity.properties) {
-        const propName = `${entity.id}_${prop.name}`;
-        const xsdType = xsdTypeMap[prop.type] || 'xsd:string';
-        
-        rdf += `    <owl:DatatypeProperty rdf:about="${baseUri}${propName}">\n`;
-        rdf += `        <rdfs:label>${escapeXml(prop.name)}</rdfs:label>\n`;
-        rdf += `        <rdfs:domain rdf:resource="${baseUri}${className}"/>\n`;
-        rdf += `        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#${xsdType.split(':')[1]}"/>\n`;
-        if (prop.description) {
-          rdf += `        <rdfs:comment>${escapeXml(prop.description)}</rdfs:comment>\n`;
-        }
-        if (prop.isIdentifier) {
-          rdf += '        <rdfs:comment>Identifier property</rdfs:comment>\n';
-        }
-        rdf += '    </owl:DatatypeProperty>\n\n';
-      }
-    }
-    
-    // Object Properties (relationships)
-    rdf += '    <!-- ================== -->\n';
-    rdf += '    <!-- Object Properties -->\n';
-    rdf += '    <!-- ================== -->\n\n';
-    
-    for (const rel of currentOntology.relationships) {
-      const fromClass = capitalize(rel.from);
-      const toClass = capitalize(rel.to);
-      
-      rdf += `    <owl:ObjectProperty rdf:about="${baseUri}${rel.name}">\n`;
-      rdf += `        <rdfs:label>${escapeXml(rel.name)}</rdfs:label>\n`;
-      rdf += `        <rdfs:domain rdf:resource="${baseUri}${fromClass}"/>\n`;
-      rdf += `        <rdfs:range rdf:resource="${baseUri}${toClass}"/>\n`;
-      if (rel.description) {
-        rdf += `        <rdfs:comment>${escapeXml(rel.description)}</rdfs:comment>\n`;
-      }
-      rdf += `        <rdfs:comment>Cardinality: ${rel.cardinality}</rdfs:comment>\n`;
-      rdf += '    </owl:ObjectProperty>\n\n';
-      
-      // Add relationship attributes as separate data properties
-      if (rel.attributes && rel.attributes.length > 0) {
-        for (const attr of rel.attributes) {
-          const attrName = `${rel.name}_${attr.name}`;
-          rdf += `    <owl:DatatypeProperty rdf:about="${baseUri}${attrName}">\n`;
-          rdf += `        <rdfs:label>${escapeXml(attr.name)}</rdfs:label>\n`;
-          rdf += `        <rdfs:comment>Relationship attribute for ${escapeXml(rel.name)}</rdfs:comment>\n`;
-          rdf += '    </owl:DatatypeProperty>\n\n';
-        }
-      }
-    }
-    
-    // Data Bindings as comments (if available)
-    if (dataBindings.length > 0) {
-      rdf += '    <!-- ============= -->\n';
-      rdf += '    <!-- Data Bindings -->\n';
-      rdf += '    <!-- ============= -->\n';
-      
-      for (const binding of dataBindings) {
-        const className = capitalize(binding.entityTypeId);
-        rdf += `    <!-- Binding for ${className}: -->\n`;
-        rdf += `    <!-- Source: ${binding.source} -->\n`;
-        rdf += `    <!-- Table: ${binding.table} -->\n`;
-        rdf += '    <!-- Column Mappings: -->\n';
-        for (const [propName, colName] of Object.entries(binding.columnMappings)) {
-          rdf += `    <!--   ${propName} -> ${colName} -->\n`;
-        }
-        rdf += '\n';
-      }
-    }
-    
-    rdf += '</rdf:RDF>\n';
-    
-    return rdf;
   };
 
   const handleCopySchema = () => {
@@ -473,7 +343,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
             <input 
               ref={fileInputRef}
               type="file" 
-              accept=".json"
+              accept=".json,.rdf,.owl"
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -491,7 +361,7 @@ export function ImportExportModal({ onClose }: ImportExportModalProps) {
             </div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Import Ontology</div>
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              Drop JSON file or click to browse
+              Drop JSON or RDF/OWL file to browse
             </div>
           </div>
 
