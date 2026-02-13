@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate": "tsx scripts/validate-rdf.ts"
   },
   "dependencies": {
     "@types/cytoscape": "^3.21.9",
