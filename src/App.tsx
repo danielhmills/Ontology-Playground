@@ -17,6 +17,7 @@ import {
   Toast
 } from './components';
 import { useAppStore } from './store/appStore';
+import { useDesignerStore } from './store/designerStore';
 import { useRoute } from './hooks/useRoute';
 import { navigate } from './lib/router';
 import type { Catalogue } from './types/catalogue';
@@ -92,6 +93,10 @@ function App() {
   }, []);
 
   const openDesigner = useCallback(() => {
+    // Load the current playground ontology into the designer
+    const { currentOntology } = useAppStore.getState();
+    useDesignerStore.getState().loadDraft(currentOntology);
+    setShowWelcome(false);
     navigate({ page: 'designer' });
   }, []);
 
