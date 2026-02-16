@@ -14,6 +14,12 @@ export function LearnPage({ route }: LearnPageProps) {
   const { darkMode, toggleDarkMode } = useAppStore();
   const [manifest, setManifest] = useState<LearnManifest | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top when navigating between articles
+  useEffect(() => {
+    pageRef.current?.scrollTo(0, 0);
+  }, [route.articleSlug]);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}learn.json`)
@@ -46,7 +52,7 @@ export function LearnPage({ route }: LearnPageProps) {
     : null;
 
   return (
-    <div className={`learn-page ${darkMode ? '' : 'light-theme'}`}>
+    <div ref={pageRef} className={`learn-page ${darkMode ? '' : 'light-theme'}`}>
       <header className="learn-header">
         <button
           className="learn-back-btn"
