@@ -341,20 +341,20 @@ one-click PR flow.
 - [x] Cap history depth (e.g., 50 steps) to limit memory usage
 
 ### 6.8 RDF syntax highlighting
-- [ ] Add syntax highlighting to the RDF source view in the designer's
+- [x] Add syntax highlighting to the RDF source view in the designer's
   "Preview RDF" tab — color XML tags, attributes, namespaces, and values
-- [ ] Use a lightweight regex-based highlighter (no heavy deps like
+- [x] Use a lightweight regex-based highlighter (no heavy deps like
   Prism/highlight.js) to keep bundle size small
-- [ ] Apply the same highlighting to the embed widget's RDF Source tab
+- [x] Apply the same highlighting to the embed widget's RDF Source tab
   and the Gallery's "View RDF source" panel
 
 ### 6.9 Download RDF from designer
-- [ ] Add a "Download .rdf" button to the designer toolbar that saves the
+- [x] Add a "Download .rdf" button to the designer toolbar that saves the
   current ontology as an RDF/XML file (similar to the catalogue's
   existing RDF download)
-- [ ] File name should be derived from the ontology name (slugified),
+- [x] File name should be derived from the ontology name (slugified),
   e.g., `my-ontology.rdf`
-- [ ] Validate before download — show validation errors if the ontology
+- [x] Validate before download — show validation errors if the ontology
   has issues, but allow download anyway with a warning
 
 ---
@@ -366,8 +366,8 @@ one-click PR flow.
 | **Phase 1** | §1 (RDF), §2 (Static), §3.1–3.2 (Catalogue structure + build) | Foundation: proper serialization, static deploy, catalogue pipeline |
 | **Phase 2** | §3.3–3.4 (Community workflow + UI), §5.1 (Deep linking), §6.1–6.4 (Editor/designer) | Community: accept contributions, browse catalogue, share links, design ontologies |
 | **Phase 3** | §6.5–6.6 (One-click PR), §4 (Embed widget), §5.6 (Learning content) | Growth: frictionless contribution, embeds drive adoption, docs help newcomers |
-| **Phase 4** | §7 (Responsive), §8 (Fabric wizard), §5.3 (A11y) | Polish: mobile users, direct adoption path, accessibility |
-| **Phase 5** | §5.2–5.5 (Diff, PWA, Analytics), §9–§11 | Extras: offline, insights, power-user features |
+| **Phase 4** | §8 (Command palette), §9 (Templates), §10 (Onboarding) | UX: power-user shortcuts, lower barriers, guided first run |
+| **Phase 5** | §5.2–5.5 (Diff, A11y, PWA, Analytics), §6.8–6.9 | Polish: diffing, accessibility, offline, syntax highlighting |
 
 ---
 
@@ -377,54 +377,39 @@ The app must be usable on phones and tablets. Shared links (Teams, Slack,
 social media) often land on mobile — if users can't interact, adoption stalls.
 
 ### 7.1 Responsive header
-- [ ] Collapse icon buttons into a hamburger/overflow menu on small screens
-- [ ] Stack logo + subtitle vertically on narrow viewports
-- [ ] Hide gamification stats on mobile (or move to hamburger menu)
+- [x] Collapse icon buttons into a hamburger/overflow menu on small screens
+- [x] Stack logo + subtitle vertically on narrow viewports
+- [x] Hide gamification stats on mobile (or move to hamburger menu)
 
 ### 7.2 Responsive main layout
-- [ ] Switch from the 3-column grid (inspector | graph | quest) to a
+- [x] Switch from the 3-column grid (inspector | graph | quest) to a
   single-column stacked layout below 768px
-- [ ] Graph takes full width; inspector and quest panel become collapsible
+- [x] Graph takes full width; inspector and quest panel become collapsible
   drawers or tabs below the graph
-- [ ] Touch-friendly: larger tap targets, swipe to dismiss drawers
+- [x] Touch-friendly: larger tap targets, swipe to dismiss drawers
 
 ### 7.3 Responsive modals
-- [ ] Modals become full-screen sheets on mobile (no floating card)
-- [ ] Scrollable content within the sheet
-- [ ] Close button always visible at top
+- [x] Modals become full-screen sheets on mobile (no floating card)
+- [x] Scrollable content within the sheet
+- [x] Close button always visible at top
 
 ### 7.4 Responsive learn page
-- [ ] Article cards stack single-column on narrow screens
-- [ ] Article content uses fluid typography and responsive images
-- [ ] Navigation buttons (prev/next) are full-width on mobile
+- [x] Article cards stack single-column on narrow screens
+- [x] Article content uses fluid typography and responsive images
+- [x] Navigation buttons (prev/next) are full-width on mobile
 
 ### 7.5 Responsive catalogue / gallery
-- [ ] Gallery grid adapts: 1 column on phone, 2 on tablet, 3+ on desktop
-- [ ] Filter bar wraps or collapses on narrow screens
-- [ ] Search bar is full-width on mobile
+- [x] Gallery grid adapts: 1 column on phone, 2 on tablet, 3+ on desktop
+- [x] Filter bar wraps or collapses on narrow screens
+- [x] Search bar is full-width on mobile
 
 ### 7.6 Responsive designer
-- [ ] Stacked layout: entity/relationship form on top, graph preview below
-- [ ] Toolbar wraps or uses overflow on narrow screens
+- [x] Stacked layout: entity/relationship form on top, graph preview below
+- [x] Toolbar wraps or uses overflow on narrow screens
 
 ---
 
-## 8. "Use in Fabric IQ" export wizard (new)
-
-A guided flow that bridges "I designed an ontology" to "I'm using it in
-Fabric IQ". This is the most direct adoption driver.
-
-- [ ] Add a "Deploy to Fabric IQ" button in the designer and catalogue
-- [ ] Step 1: Validate ontology (run existing validation)
-- [ ] Step 2: Download RDF file (auto-triggered)
-- [ ] Step 3: Show exact Fabric IQ instructions with links to Microsoft
-  docs for uploading an ontology
-- [ ] Include a checklist: "Ontology has identifiers ✓, relationships ✓,
-  namespace set ✓"
-
----
-
-## 9. Command palette / keyboard shortcuts (new)
+## 8. Command palette / keyboard shortcuts
 
 - [ ] `Cmd+K` / `Ctrl+K` opens a command palette
 - [ ] Type to navigate: ontologies, designer, learn, import/export
@@ -432,7 +417,7 @@ Fabric IQ". This is the most direct adoption driver.
 
 ---
 
-## 10. Starter templates in designer (new)
+## 9. Starter templates in designer
 
 - [ ] "Start from template" option when opening the designer empty
 - [ ] Domain presets: Retail, Healthcare, Finance, IoT, Education
@@ -441,7 +426,7 @@ Fabric IQ". This is the most direct adoption driver.
 
 ---
 
-## 11. Interactive onboarding tour (new)
+## 10. Interactive onboarding tour
 
 - [ ] Replace the static welcome modal with a 5-step guided tour
 - [ ] Spotlight overlay highlights: header → graph → inspector → query bar
@@ -453,6 +438,10 @@ Fabric IQ". This is the most direct adoption driver.
 
 ## Low-priority / deferred
 
+- [ ] **"Use in Fabric IQ" export wizard** — A guided flow (validate →
+  download RDF → show Fabric IQ upload instructions). Deferred until the
+  Fabric IQ integration story is clearer and a native link/API may be
+  available.
 - [ ] **Re-enable GitHub Pages workflow** — the repo is currently private so
   GitHub Pages won't work. Once the repo is made public (or moved to GitHub
   Enterprise with Pages support), uncomment the `push` trigger in
