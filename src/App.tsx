@@ -22,6 +22,7 @@ import { useDesignerStore } from './store/designerStore';
 import { useRoute } from './hooks/useRoute';
 import { navigate } from './lib/router';
 import type { Catalogue } from './types/catalogue';
+import { Search, MessageSquare, Info, Compass } from 'lucide-react';
 import './styles/app.css';
 
 const AI_BUILDER_ENABLED = import.meta.env.VITE_ENABLE_AI_BUILDER === 'true';
@@ -40,6 +41,7 @@ function App() {
   const [showNLBuilder, setShowNLBuilder] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [toast, setToast] = useState<{ message: string; icon: string } | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<'graph' | 'quests' | 'inspector' | 'query'>('graph');
   const { darkMode, earnedBadges, loadOntology } = useAppStore();
 
   // Show toast when a new badge is earned
@@ -128,6 +130,37 @@ function App() {
         <InspectorPanel />
         <QueryPlayground />
       </div>
+
+      {/* Mobile bottom tabs — visible only on small screens via CSS */}
+      <div className="mobile-panel-tabs">
+        <button className={`mobile-tab ${mobilePanel === 'graph' ? 'active' : ''}`} onClick={() => setMobilePanel('graph')}>
+          <Search size={18} /> Graph
+        </button>
+        <button className={`mobile-tab ${mobilePanel === 'quests' ? 'active' : ''}`} onClick={() => setMobilePanel('quests')}>
+          <Compass size={18} /> Quests
+        </button>
+        <button className={`mobile-tab ${mobilePanel === 'inspector' ? 'active' : ''}`} onClick={() => setMobilePanel('inspector')}>
+          <Info size={18} /> Inspector
+        </button>
+        <button className={`mobile-tab ${mobilePanel === 'query' ? 'active' : ''}`} onClick={() => setMobilePanel('query')}>
+          <MessageSquare size={18} /> Query
+        </button>
+      </div>
+
+      {/* Mobile panel drawer — visible only on small screens when a panel is selected */}
+      {mobilePanel !== 'graph' && (
+        <div className="mobile-panel-drawer">
+          <button className="mobile-panel-close" onClick={() => setMobilePanel('graph')}>✕ Close</button>
+          {mobilePanel === 'quests' && <QuestPanel />}
+          {mobilePanel === 'inspector' && (
+            <>
+              <SearchFilter />
+              <InspectorPanel />
+            </>
+          )}
+          {mobilePanel === 'query' && <QueryPlayground />}
+        </div>
+      )}
 
       <AnimatePresence>
         {showWelcome && <WelcomeModal onClose={() => setShowWelcome(false)} />}

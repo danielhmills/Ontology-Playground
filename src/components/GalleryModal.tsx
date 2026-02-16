@@ -217,7 +217,7 @@ export function GalleryModal({ onClose }: GalleryModalProps) {
         {/* Gallery Grid */}
         {!loading && !error && (
           <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div className="gallery-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: 16 }}>
             {visibleEntries.map((entry) => {
               const isActive = currentOntology.name === entry.ontology.name;
               const categoryColor = CATEGORY_COLORS[entry.category] ?? '#6B7280';

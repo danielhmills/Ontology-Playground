@@ -1064,12 +1064,92 @@ body {
 @media (max-width: 900px) {
   .app-container {
     grid-template-columns: 1fr;
-    grid-template-rows: 64px 1fr auto;
+    grid-template-rows: 56px 1fr;
   }
   
   .quest-panel,
-  .inspector-panel {
+  .right-sidebar {
     display: none;
+  }
+
+  .header {
+    padding: 0 12px;
+  }
+
+  .header-stats {
+    display: none;
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .header-mobile-menu {
+    display: flex;
+  }
+
+  /* Mobile bottom tabs */
+  .mobile-panel-tabs {
+    display: flex;
+  }
+
+  .app-container {
+    grid-template-rows: 56px 1fr auto;
+  }
+
+  /* Graph fills available space */
+  .graph-legend {
+    display: none;
+  }
+
+  .graph-controls {
+    bottom: 12px;
+    left: 12px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .header-logo svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .header-title {
+    font-size: 14px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-subtitle {
+    display: none;
+  }
+
+  .modal-content {
+    padding: 20px;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    height: 100%;
+  }
+
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-features {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-logo {
+    font-size: 48px;
+  }
+
+  .modal-title {
+    font-size: 22px;
   }
 }
 
@@ -2690,4 +2770,222 @@ body {
   color: var(--ms-blue);
 }
 
+/* ===== Mobile Menu & Panel Components ===== */
 
+/* Hamburger button — hidden on desktop */
+.header-mobile-menu {
+  display: none;
+  position: relative;
+}
+
+.header-hamburger {
+  width: 40px;
+  height: 40px;
+}
+
+.mobile-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1001;
+  min-width: 220px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-menu-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 4px;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.mobile-menu-item:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Mobile panel bottom tabs — hidden on desktop */
+.mobile-panel-tabs {
+  display: none;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+.mobile-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.mobile-tab.active {
+  color: var(--ms-blue);
+}
+
+.mobile-tab:hover {
+  color: var(--text-primary);
+}
+
+/* Mobile panel drawer — slides up over graph */
+.mobile-panel-drawer {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-panel-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 48px;
+    left: 0;
+    right: 0;
+    top: 56px;
+    background: var(--bg-secondary);
+    z-index: 500;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .mobile-panel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .mobile-panel-close:hover {
+    color: var(--text-primary);
+  }
+
+  /* QuestPanel and InspectorPanel need flex adjustments inside the drawer */
+  .mobile-panel-drawer .quest-panel,
+  .mobile-panel-drawer .inspector-panel {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .mobile-panel-drawer .search-filter-section {
+    flex-shrink: 0;
+  }
+}
+
+/* ===== Responsive Gallery (inline styles need overrides) ===== */
+@media (max-width: 600px) {
+  .modal-content {
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* ===== Responsive Designer ===== */
+@media (max-width: 900px) {
+  .designer-topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .designer-meta-fields {
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .designer-meta-name {
+    width: 100%;
+  }
+
+  .designer-meta-desc {
+    width: 100%;
+  }
+
+  .designer-split {
+    flex-direction: column;
+  }
+
+  .designer-sidebar {
+    width: 100%;
+    min-width: unset;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .designer-preview {
+    min-height: 40vh;
+  }
+}
+
+/* ===== Responsive Learn Page ===== */
+@media (max-width: 600px) {
+  .learn-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-header,
+  .learn-index {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .learn-article {
+    padding: 16px;
+  }
+
+  .learn-nav-btn {
+    flex: 1;
+  }
+
+  .learn-article-nav {
+    flex-direction: column;
+  }
+}

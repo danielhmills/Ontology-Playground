@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
 import { useRoute } from '../hooks/useRoute';
-import { Moon, Sun, Database, Trophy, HelpCircle, FileJson, LayoutGrid, Sparkles, FileText, Share2, PenTool, BookOpen } from 'lucide-react';
+import { Moon, Sun, Database, Trophy, HelpCircle, FileJson, LayoutGrid, Sparkles, FileText, Share2, PenTool, BookOpen, Menu, X } from 'lucide-react';
 
 interface HeaderProps {
   onHelpClick: () => void;
@@ -18,6 +18,8 @@ export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, o
   const { darkMode, toggleDarkMode, totalPoints, earnedBadges, currentOntology } = useAppStore();
   const route = useRoute();
   const [copied, setCopied] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const ontologyDisplayName = currentOntology.name || 'Untitled Ontology';
 
@@ -31,6 +33,20 @@ export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, o
       setTimeout(() => setCopied(false), 2000);
     });
   };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
+  const menuAction = (fn: () => void) => () => { setMenuOpen(false); fn(); };
 
   return (
     <header className="header">
@@ -103,6 +119,61 @@ export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, o
         <button className="icon-btn" onClick={toggleDarkMode} data-tooltip={darkMode ? 'Light Mode' : 'Dark Mode'}>
           {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
+      </div>
+
+      {/* Mobile hamburger menu */}
+      <div className="header-mobile-menu" ref={menuRef}>
+        <button className="icon-btn header-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        {menuOpen && (
+          <div className="mobile-menu-dropdown">
+            <div className="mobile-menu-stats">
+              <Trophy size={16} />
+              <span className="stat-value">{totalPoints}</span>
+              <span>points</span>
+              <span style={{ margin: '0 8px', color: 'var(--text-tertiary)' }}>·</span>
+              <span>🏆</span>
+              <span className="stat-value">{earnedBadges.length}</span>
+              <span>badges</span>
+            </div>
+            {shareableId && (
+              <button className="mobile-menu-item" onClick={menuAction(handleShare)}>
+                <Share2 size={18} /> {copied ? 'Copied!' : 'Share'}
+              </button>
+            )}
+            <button className="mobile-menu-item" onClick={menuAction(onSummaryClick)}>
+              <FileText size={18} /> Summary
+            </button>
+            {onNLBuilderClick && (
+              <button className="mobile-menu-item" onClick={menuAction(onNLBuilderClick)}>
+                <Sparkles size={18} /> AI Builder
+              </button>
+            )}
+            <button className="mobile-menu-item" onClick={menuAction(onGalleryClick)}>
+              <LayoutGrid size={18} /> Catalogue
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onDesignerClick)}>
+              <PenTool size={18} /> Designer
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onLearnClick)}>
+              <BookOpen size={18} /> Learn
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onImportExportClick)}>
+              <FileJson size={18} /> Import / Export
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onHelpClick)}>
+              <HelpCircle size={18} /> Help
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onDataSourcesClick)}>
+              <Database size={18} /> Data Sources
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(toggleDarkMode)}>
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
