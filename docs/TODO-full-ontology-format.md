@@ -54,7 +54,7 @@ boolean on each property, with no concept of a composite key.
   names that together form the entity type's unique key
 - [ ] Keep `isIdentifier` on `Property` for backward compatibility, but
   derive it from `key` when present
-- [ ] Only `string` and `integer` properties may participate in a key
+- [x] Only `string` and `integer` properties may participate in a key
   (validate this)
 
 ### 1.2 Update the designer UI
@@ -139,7 +139,7 @@ Warehouse types. The current Playground supports: `string`, `integer`,
 `decimal`, `date`, `datetime`, `boolean`, `enum`.
 
 ### 4.1 Add missing types to `Property.type`
-- [ ] Add `'double'` — floating-point (maps to `xsd:double`)
+- [x] Add `'double'` — floating-point (maps to `xsd:double`)
 - [ ] Add `'long'` — 64-bit integer (maps to `xsd:long`)
 - [ ] Add `'guid'` — globally unique identifier (maps to a custom type or
   `xsd:string` with format annotation)
@@ -249,25 +249,25 @@ data binding.
 Fabric IQ enforces strict naming rules that the Playground currently ignores.
 
 ### 7.1 Entity type name rules
-- [ ] 1–26 characters
-- [ ] Only alphanumeric characters, hyphens (`-`), and underscores (`_`)
-- [ ] Must start and end with an alphanumeric character
-- [ ] Validate in the designer on input (inline error)
+- [x] 1–26 characters
+- [x] Only alphanumeric characters, hyphens (`-`), and underscores (`_`)
+- [x] Must start and end with an alphanumeric character
+- [x] Validate in the designer on input (inline error)
 - [ ] Validate in the RDF parser on import (warning, not blocking)
 
 ### 7.2 Property name rules
-- [ ] 1–26 characters
-- [ ] Same character rules as entity types
-- [ ] Property names must be **unique across all entity types** if they share
+- [x] 1–26 characters
+- [x] Same character rules as entity types
+- [x] Property names must be **unique across all entity types** if they share
   the same data type (e.g., two entities can both have `string ID`, but
   one entity can't have `string ID` while another has `integer ID`)
-- [ ] Validate in the designer (cross-entity check on save)
-- [ ] Show a clear error message explaining the cross-entity constraint
+- [x] Validate in the designer (cross-entity check on save)
+- [x] Show a clear error message explaining the cross-entity constraint
 
 ### 7.3 Relationship type constraints
-- [ ] Source and target entity types must be **distinct** (no self-referencing
+- [x] Source and target entity types must be **distinct** (no self-referencing
   relationships in Fabric IQ)
-- [ ] Validate in the designer when creating a relationship
+- [x] Validate in the designer when creating a relationship
 - [ ] Show a warning when importing an RDF file with self-referencing
   relationships
 
