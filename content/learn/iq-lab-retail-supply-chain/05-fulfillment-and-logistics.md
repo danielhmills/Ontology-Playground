@@ -72,7 +72,7 @@ A single graph traversal from Carrier through Shipment to Order to Customer answ
 
 ## The graph at Step 4
 
-<ontology-embed id="official/iq-lab-retail-step-4" height="450px" />
+<ontology-embed id="official/iq-lab-retail-step-4" diff="official/iq-lab-retail-step-3" height="450px" />
 
 *Ten entity types forming a rich connected graph. Shipment links the logistics layer (Carrier, Warehouse) to the commerce layer (Order, Customer). You can traverse from any warehouse to any customer through the graph.*
 

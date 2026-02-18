@@ -2880,6 +2880,16 @@ body {
   border-radius: var(--radius-md);
   overflow: hidden;
 }
+.learn-embed-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1500;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
 .learn-embed-error {
   display: flex;
   align-items: center;

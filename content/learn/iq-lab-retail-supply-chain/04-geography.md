@@ -53,7 +53,7 @@ Notice the pattern: **Store** → **Region** forms a **geographic hierarchy**. I
 
 ## The graph at Step 3
 
-<ontology-embed id="official/iq-lab-retail-step-3" height="400px" />
+<ontology-embed id="official/iq-lab-retail-step-3" diff="official/iq-lab-retail-step-2" height="400px" />
 
 *Seven entity types. Region and Store add geographic context. Notice how Order now connects to both Customer (who bought) and Region (where it was fulfilled).*
 

@@ -76,7 +76,7 @@ The ontology **unifies all of these** under a single connected graph. A query li
 
 ## The graph at Step 5
 
-<ontology-embed id="official/iq-lab-retail-step-5" height="450px" />
+<ontology-embed id="official/iq-lab-retail-step-5" diff="official/iq-lab-retail-step-4" height="450px" />
 
 *Thirteen entity types. Inventory links Product to Warehouse. DemandSignal connects Product to Region. The graph now spans commerce, logistics, and planning domains.*
 

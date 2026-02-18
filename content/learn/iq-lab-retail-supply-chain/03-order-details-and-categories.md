@@ -54,7 +54,7 @@ Products rarely exist in isolation — they belong to **categories** like "froze
 
 ## The graph at Step 2
 
-<ontology-embed id="official/iq-lab-retail-step-2" height="400px" />
+<ontology-embed id="official/iq-lab-retail-step-2" diff="official/iq-lab-retail-step-1" height="400px" />
 
 *Five entity types connected by five relationships. OrderLine acts as a bridge between Order and Product, carrying quantity data. ProductCategory groups products.*
 

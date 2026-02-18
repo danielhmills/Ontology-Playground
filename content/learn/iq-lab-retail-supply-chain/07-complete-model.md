@@ -50,7 +50,7 @@ Three final relationships:
 
 ## The complete graph
 
-<ontology-embed id="official/iq-lab-retail-step-6" height="500px" />
+<ontology-embed id="official/iq-lab-retail-step-6" diff="official/iq-lab-retail-step-5" height="500px" />
 
 *The complete retail supply chain ontology: 15 entity types, 18 relationships. Every entity connects to at least one other, forming a rich, traversable graph.*
 
