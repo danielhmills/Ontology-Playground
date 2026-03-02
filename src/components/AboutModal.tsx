@@ -35,6 +35,16 @@ export function AboutModal({ onClose }: AboutModalProps) {
               Ontology Playground is a community learning and design experience for building RDF/OWL ontologies,
               exploring graph relationships, and preparing models compatible with Microsoft Fabric IQ workflows.
             </p>
+            <p className="feature-text" style={{ margin: '10px 0 0 0' }}>
+              Learn more about Microsoft Fabric IQ:{' '}
+              <a
+                href="https://learn.microsoft.com/fabric/iq/overview"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                https://learn.microsoft.com/fabric/iq/overview
+              </a>
+            </p>
           </div>
 
           <div

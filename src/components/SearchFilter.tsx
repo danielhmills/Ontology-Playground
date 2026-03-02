@@ -183,7 +183,7 @@ export function SearchFilter() {
             </div>
 
             {/* Results or Quick Access */}
-            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 200, overflowY: 'auto' }} tabIndex={0} aria-label="Search results">
               {searchQuery && !hasResults && (
                 <div style={{ 
                   padding: 12, 
@@ -223,7 +223,7 @@ export function SearchFilter() {
                   />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-primary)' }}>{entity.name}</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>
+                    <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>
                       {entity.properties.length} properties
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export function SearchFilter() {
                   <div style={{ fontSize: 10 }}>↔</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-primary)' }}>{rel.name}</div>
-                    <div style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>
+                    <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>
                       {rel.from} → {rel.to}
                     </div>
                   </div>

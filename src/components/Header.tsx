@@ -95,7 +95,7 @@ export function Header({ onAboutClick, onHelpClick, onDataSourcesClick, onImport
         </svg>
         <div>
           <span className="header-title">{ontologyDisplayName}</span>
-          <span className="header-subtitle">Ontology Playground (Preview) · Microsoft Fabric IQ</span>
+          <span className="header-subtitle">Ontology Playground (Preview)</span>
         </div>
       </div>
 
@@ -127,32 +127,32 @@ export function Header({ onAboutClick, onHelpClick, onDataSourcesClick, onImport
           <span>Summary</span>
         </button>
         {onNLBuilderClick && (
-          <button className="icon-btn" onClick={onNLBuilderClick} data-tooltip="AI Builder">
+          <button className="icon-btn" onClick={onNLBuilderClick} data-tooltip="AI Builder" aria-label="AI Builder">
             <Sparkles size={20} />
           </button>
         )}
-        <button className="icon-btn" onClick={onGalleryClick} data-tooltip="Catalogue">
+        <button className="icon-btn" onClick={onGalleryClick} data-tooltip="Catalogue" aria-label="Catalogue">
           <LayoutGrid size={20} />
         </button>
-        <button className="icon-btn" onClick={onDesignerClick} data-tooltip="Designer">
+        <button className="icon-btn" onClick={onDesignerClick} data-tooltip="Designer" aria-label="Designer">
           <PenTool size={20} />
         </button>
-        <button className="icon-btn" onClick={onLearnClick} data-tooltip="Ontology School">
+        <button className="icon-btn" onClick={onLearnClick} data-tooltip="Ontology School" aria-label="Ontology School">
           <BookOpen size={20} />
         </button>
-        <button className="icon-btn" onClick={onImportExportClick} data-tooltip="Import / Export">
+        <button className="icon-btn" onClick={onImportExportClick} data-tooltip="Import / Export" aria-label="Import / Export">
           <FileJson size={20} />
         </button>
-        <button className="icon-btn" onClick={onHelpClick} data-tooltip="Help">
+        <button className="icon-btn" onClick={onHelpClick} data-tooltip="Help" aria-label="Help">
           <HelpCircle size={20} />
         </button>
-        <button className="icon-btn" onClick={onAboutClick} data-tooltip="About">
+        <button className="icon-btn" onClick={onAboutClick} data-tooltip="About" aria-label="About">
           <Info size={20} />
         </button>
-        <button className="icon-btn" onClick={onDataSourcesClick} data-tooltip="Data Sources">
+        <button className="icon-btn" onClick={onDataSourcesClick} data-tooltip="Data Sources" aria-label="Data Sources">
           <Database size={20} />
         </button>
-        <button className="icon-btn" onClick={toggleDarkMode} data-tooltip={darkMode ? 'Light Mode' : 'Dark Mode'}>
+        <button className="icon-btn" onClick={toggleDarkMode} data-tooltip={darkMode ? 'Light Mode' : 'Dark Mode'} aria-label={darkMode ? 'Light Mode' : 'Dark Mode'}>
           {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>

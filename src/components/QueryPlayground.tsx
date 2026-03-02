@@ -97,13 +97,14 @@ export function QueryPlayground() {
           onKeyPress={handleKeyPress}
         />
         {input && (
-          <button className="icon-btn" onClick={handleClear} title="Clear">
+          <button className="icon-btn" onClick={handleClear} title="Clear" aria-label="Clear query">
             <X size={18} />
           </button>
         )}
         <button 
           className="btn btn-primary" 
           onClick={handleQuery}
+          aria-label="Run query"
           disabled={isProcessing}
         >
           {isProcessing ? (
@@ -121,7 +122,7 @@ export function QueryPlayground() {
 
       {!result && !isProcessing && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>
             Try asking:
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
