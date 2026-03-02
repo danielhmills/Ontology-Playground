@@ -7,6 +7,7 @@ export { SearchFilter } from './SearchFilter';
 export { Header } from './Header';
 export { WelcomeModal } from './WelcomeModal';
 export { HelpModal } from './HelpModal';
+export { AboutModal } from './AboutModal';
 export { DataSourcesModal } from './DataSourcesModal';
 export { ImportExportModal } from './ImportExportModal';
 export { GalleryModal } from './GalleryModal';

@@ -8,6 +8,7 @@ import {
   QueryPlayground,
   SearchFilter,
   WelcomeModal,
+  AboutModal,
   HelpModal,
   DataSourcesModal,
   ImportExportModal,
@@ -42,6 +43,7 @@ function App() {
 
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTour, setShowTour] = useState(() => !isTourDismissed());
+  const [showAbout, setShowAbout] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showDataSources, setShowDataSources] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
@@ -161,6 +163,7 @@ function App() {
     { id: 'learn', label: 'Open Ontology School', icon: <BookOpen size={18} />, action: openLearn },
     { id: 'import-export', label: 'Import / Export', icon: <FileJson size={18} />, action: () => setShowImportExport(true) },
     { id: 'summary', label: 'View Summary', icon: <FileText size={18} />, action: () => setShowSummary(true) },
+    { id: 'about', label: 'About & Trademark Notice', icon: <Info size={18} />, action: () => setShowAbout(true) },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} />, shortcut: '?', action: () => setShowHelp(true) },
     { id: 'data-sources', label: 'Data Sources', icon: <Database size={18} />, action: () => setShowDataSources(true) },
     { id: 'theme', label: darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode', icon: darkMode ? <Sun size={18} /> : <Moon size={18} />, action: toggleDarkMode },
@@ -177,6 +180,7 @@ function App() {
   return (
     <div className={`app-container ${darkMode ? '' : 'light-theme'}`}>
       <Header 
+        onAboutClick={() => setShowAbout(true)}
         onHelpClick={() => setShowHelp(true)} 
         onDataSourcesClick={() => setShowDataSources(true)}
         onImportExportClick={() => setShowImportExport(true)}
@@ -231,6 +235,10 @@ function App() {
 
       <AnimatePresence>
         {showWelcome && !showTour && <WelcomeModal onClose={() => setShowWelcome(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>

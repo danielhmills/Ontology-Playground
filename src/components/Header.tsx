@@ -4,9 +4,10 @@ import { useRoute } from '../hooks/useRoute';
 import { routeToHash } from '../lib/router';
 import { encodeSharePayload } from '../lib/shareCodec';
 import { serializeToRDF } from '../lib/rdf/serializer';
-import { Moon, Sun, Database, Trophy, HelpCircle, FileJson, LayoutGrid, Sparkles, FileText, Share2, PenTool, BookOpen, Menu, X, Download } from 'lucide-react';
+import { Moon, Sun, Database, Trophy, HelpCircle, FileJson, LayoutGrid, Sparkles, FileText, Share2, PenTool, BookOpen, Menu, X, Download, Info } from 'lucide-react';
 
 interface HeaderProps {
+  onAboutClick: () => void;
   onHelpClick: () => void;
   onDataSourcesClick: () => void;
   onImportExportClick: () => void;
@@ -17,7 +18,7 @@ interface HeaderProps {
   onSummaryClick: () => void;
 }
 
-export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, onGalleryClick, onDesignerClick, onLearnClick, onNLBuilderClick, onSummaryClick }: HeaderProps) {
+export function Header({ onAboutClick, onHelpClick, onDataSourcesClick, onImportExportClick, onGalleryClick, onDesignerClick, onLearnClick, onNLBuilderClick, onSummaryClick }: HeaderProps) {
   const { darkMode, toggleDarkMode, totalPoints, earnedBadges, currentOntology, dataBindings } = useAppStore();
   const route = useRoute();
   const [shareStatus, setShareStatus] = useState<'idle' | 'copying' | 'copied' | 'downloaded'>('idle');
@@ -145,6 +146,9 @@ export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, o
         <button className="icon-btn" onClick={onHelpClick} data-tooltip="Help">
           <HelpCircle size={20} />
         </button>
+        <button className="icon-btn" onClick={onAboutClick} data-tooltip="About">
+          <Info size={20} />
+        </button>
         <button className="icon-btn" onClick={onDataSourcesClick} data-tooltip="Data Sources">
           <Database size={20} />
         </button>
@@ -194,6 +198,9 @@ export function Header({ onHelpClick, onDataSourcesClick, onImportExportClick, o
             </button>
             <button className="mobile-menu-item" onClick={menuAction(onHelpClick)}>
               <HelpCircle size={18} /> Help
+            </button>
+            <button className="mobile-menu-item" onClick={menuAction(onAboutClick)}>
+              <Info size={18} /> About
             </button>
             <button className="mobile-menu-item" onClick={menuAction(onDataSourcesClick)}>
               <Database size={18} /> Data Sources
