@@ -39,12 +39,16 @@ Template applies label `ontology-school-review`.
 
 ## 3) Approve and trigger automation
 
-When a human reviewer approves content:
+There are two ways to approve a lesson:
 
+### Option A — Comment trigger
+Post a comment containing `#approved` on the review issue. The workflow will automatically add the `ontology-school-approved` label, close the issue, and create the approval PR.
+
+### Option B — Manual label + close
 1. Add issue label `ontology-school-approved`
 2. Close the issue
 
-This triggers workflow:
+Either option triggers the workflow:
 
 - `.github/workflows/ontology-school-review-approval.yml`
 
@@ -52,6 +56,7 @@ The workflow will:
 
 - Parse `Lesson Path` from issue body
 - Remove `reviewStatus: under-human-review` from that lesson
+- Recompile `public/learn.json`
 - Open an automated PR with the change
 
 ## 4) Merge approval PR
