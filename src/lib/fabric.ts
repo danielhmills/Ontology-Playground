@@ -247,13 +247,18 @@ function sanitizeName(name: string): string {
 const FABRIC_API_BASE = 'https://api.fabric.microsoft.com/v1';
 
 export class FabricApiError extends Error {
+  readonly status: number;
+  readonly errorCode?: string;
+
   constructor(
     message: string,
-    public readonly status: number,
-    public readonly errorCode?: string,
+    status: number,
+    errorCode?: string,
   ) {
     super(message);
     this.name = 'FabricApiError';
+    this.status = status;
+    this.errorCode = errorCode;
   }
 }
 
