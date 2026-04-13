@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2, Cloud } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { serializeToRDF } from '../lib/rdf/serializer';
+import { serializeToRDF, serializeToTurtle } from '../lib/rdf/serializer';
 import { parseRDF, RDFParseError } from '../lib/rdf/parser';
 import type { Ontology, DataBinding } from '../data/ontology';
 
@@ -49,7 +49,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf'>('rdf');
+  const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf' | 'turtle'>('turtle');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,6 +129,10 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
       content = serializeToRDF(currentOntology, dataBindings);
       mimeType = 'application/rdf+xml';
       extension = 'rdf';
+    } else if (exportFormat === 'turtle') {
+      content = serializeToTurtle(currentOntology, dataBindings);
+      mimeType = 'text/turtle';
+      extension = 'ttl';
     } else {
       content = exportOntology();
       mimeType = 'application/json';
@@ -472,6 +476,25 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
                 >
                   <Share2 size={12} />
                   RDF
+                </button>
+                <button
+                  onClick={() => setExportFormat('turtle')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 11,
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: exportFormat === 'turtle' ? '#3498DB' : 'var(--bg-secondary)',
+                    color: exportFormat === 'turtle' ? 'white' : 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  title="Turtle (TTL) - Terse RDF Triple Language"
+                >
+                  <FileText size={12} />
+                  Turtle
                 </button>
               </div>
             )}
