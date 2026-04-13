@@ -49,7 +49,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf' | 'turtle'>('turtle');
+  const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf'>('rdf');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,10 +129,6 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
       content = serializeToRDF(currentOntology, dataBindings);
       mimeType = 'application/rdf+xml';
       extension = 'rdf';
-    } else if (exportFormat === 'turtle') {
-      content = serializeToTurtle(currentOntology, dataBindings);
-      mimeType = 'text/turtle';
-      extension = 'ttl';
     } else {
       content = exportOntology();
       mimeType = 'application/json';
@@ -144,6 +140,19 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
     const link = document.createElement('a');
     link.href = url;
     link.download = `${currentOntology.name.toLowerCase().replace(/\s+/g, '-')}-ontology.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportTurtle = () => {
+    const content = serializeToTurtle(currentOntology, dataBindings);
+    const blob = new Blob([content], { type: 'text/turtle' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${currentOntology.name.toLowerCase().replace(/\s+/g, '-')}-ontology.ttl`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -477,25 +486,6 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
                   <Share2 size={12} />
                   RDF
                 </button>
-                <button
-                  onClick={() => setExportFormat('turtle')}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 11,
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: exportFormat === 'turtle' ? '#3498DB' : 'var(--bg-secondary)',
-                    color: exportFormat === 'turtle' ? 'white' : 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
-                  title="Turtle (TTL) - Terse RDF Triple Language"
-                >
-                  <FileText size={12} />
-                  Turtle
-                </button>
               </div>
             )}
             
@@ -505,6 +495,16 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
               style={{ width: '100%' }}
             >
               {LEGACY_FORMATS_ENABLED ? `Download .${exportFormat}` : 'Download RDF/OWL'}
+            </button>
+
+            <button
+              className="btn btn-secondary"
+              onClick={handleExportTurtle}
+              style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              title="Export as Turtle (TTL) - Terse RDF Triple Language"
+            >
+              <FileText size={14} />
+              Export RDF-TURTLE
             </button>
 
             {onFabricPush && (
