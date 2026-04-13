@@ -537,15 +537,16 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
               {rdfDropdownOpen && (
                 <div style={{
                   position: 'absolute',
-                  top: '100%',
+                  bottom: 'calc(100% + 4px)',
                   left: 0,
                   right: 0,
-                  marginTop: 4,
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border-primary)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  zIndex: 1000
+                  zIndex: 1000,
+                  maxHeight: 320,
+                  overflowY: 'auto'
                 }}>
                   <button
                     onClick={() => { handleExportTurtle(); setRdfDropdownOpen(false); }}
