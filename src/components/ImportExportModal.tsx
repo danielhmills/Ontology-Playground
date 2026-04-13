@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2, Cloud } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
-import { serializeToRDF, serializeToTurtle } from '../lib/rdf/serializer';
+import { serializeToRDF, serializeToTurtle, serializeToJSONLD } from '../lib/rdf/serializer';
 import { parseRDF, RDFParseError } from '../lib/rdf/parser';
 import type { Ontology, DataBinding } from '../data/ontology';
 
@@ -52,6 +52,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
   const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf'>('rdf');
   const [rdfDropdownOpen, setRdfDropdownOpen] = useState(false);
   const rdfDropdownRef = useRef<HTMLDivElement>(null);
+  const [jsonldSubmenuOpen, setJsonldSubmenuOpen] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,6 +163,19 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [rdfDropdownOpen]);
+
+  const handleExportJSONLD = (withContext: boolean) => {
+    const content = serializeToJSONLD(currentOntology, dataBindings, withContext);
+    const blob = new Blob([content], { type: 'application/ld+json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${currentOntology.name.toLowerCase().replace(/\s+/g, '-')}-ontology${withContext ? '' : '-no-context'}.jsonld`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const handleExportTurtle = () => {
     const content = serializeToTurtle(currentOntology, dataBindings);
@@ -584,6 +598,90 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
                       <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>.rdf format (MS Fabric)</div>
                     </div>
                   </button>
+                  <div style={{ height: 1, background: 'var(--border-primary)', margin: '0 8px' }} />
+                  {/* JSON-LD with submenu */}
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setJsonldSubmenuOpen(!jsonldSubmenuOpen)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        textAlign: 'left',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        color: 'var(--text-primary)',
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderRadius: 'var(--radius-sm)',
+                        margin: 4
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <FileJson size={14} color="#F39C12" />
+                        <div>
+                          <div style={{ fontWeight: 500 }}>JSON-LD</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>.jsonld format</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 10 }}>{jsonldSubmenuOpen ? '▲' : '▼'}</span>
+                    </button>
+                    
+                    {jsonldSubmenuOpen && (
+                      <div style={{
+                        marginLeft: 28,
+                        marginTop: 4,
+                        marginBottom: 4,
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-primary)',
+                        borderRadius: 'var(--radius-sm)'
+                      }}>
+                        <button
+                          onClick={() => { handleExportJSONLD(true); setJsonldSubmenuOpen(false); setRdfDropdownOpen(false); }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            fontSize: 12,
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <div style={{ fontWeight: 500 }}>With @context</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Includes JSON-LD context</div>
+                        </button>
+                        <div style={{ height: 1, background: 'var(--border-primary)', margin: '0 8px' }} />
+                        <button
+                          onClick={() => { handleExportJSONLD(false); setJsonldSubmenuOpen(false); setRdfDropdownOpen(false); }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            textAlign: 'left',
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            color: 'var(--text-primary)',
+                            fontSize: 12,
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <div style={{ fontWeight: 500 }}>Without @context</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>Plain JSON structure</div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
