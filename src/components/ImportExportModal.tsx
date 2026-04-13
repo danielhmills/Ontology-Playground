@@ -294,7 +294,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
         animate={{ scale: 1, y: 0 }}
         transition={{ type: 'spring', damping: 20 }}
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 650, maxHeight: '85vh', overflow: 'auto' }}
+        style={{ maxWidth: 650, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
@@ -308,6 +308,8 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
           </button>
         </div>
 
+        {/* Scrollable content wrapper */}
+        <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         {/* Current Ontology Info */}
         <div style={{ 
           padding: 16, 
@@ -543,7 +545,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
                   border: '1px solid var(--border-primary)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  zIndex: 10
+                  zIndex: 1000
                 }}>
                   <button
                     onClick={() => { handleExportTurtle(); setRdfDropdownOpen(false); }}
@@ -739,7 +741,9 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
           </div>
         )}
 
-        <div style={{ marginTop: 20, textAlign: 'center' }}>
+        </div>
+
+        <div style={{ marginTop: 20, textAlign: 'center', flexShrink: 0 }}>
           <button className="btn btn-primary" onClick={onClose}>
             Done
           </button>
