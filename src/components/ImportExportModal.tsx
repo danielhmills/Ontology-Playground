@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2, Cloud } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
@@ -50,6 +50,8 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'yaml' | 'csv' | 'rdf'>('rdf');
+  const [rdfDropdownOpen, setRdfDropdownOpen] = useState(false);
+  const rdfDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,6 +147,21 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (rdfDropdownRef.current && !rdfDropdownRef.current.contains(event.target as Node)) {
+        setRdfDropdownOpen(false);
+      }
+    };
+    if (rdfDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [rdfDropdownOpen]);
 
   const handleExportTurtle = () => {
     const content = serializeToTurtle(currentOntology, dataBindings);
@@ -489,23 +506,87 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
               </div>
             )}
             
-            <button 
-              className="btn btn-primary"
-              onClick={handleExport}
-              style={{ width: '100%' }}
-            >
-              {LEGACY_FORMATS_ENABLED ? `Download .${exportFormat}` : 'Download RDF/OWL'}
-            </button>
-
-            <button
-              className="btn btn-secondary"
-              onClick={handleExportTurtle}
-              style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              title="Export as Turtle (TTL) - Terse RDF Triple Language"
-            >
-              <FileText size={14} />
-              Export RDF-TURTLE
-            </button>
+            {/* RDF Export Dropdown */}
+            <div ref={rdfDropdownRef} style={{ position: 'relative', width: '100%' }}>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setRdfDropdownOpen(!rdfDropdownOpen)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Share2 size={16} />
+                Download RDF
+                <span style={{ marginLeft: 4, fontSize: 10 }}>{rdfDropdownOpen ? '▲' : '▼'}</span>
+              </button>
+              
+              {rdfDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: 4,
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  zIndex: 10
+                }}>
+                  <button
+                    onClick={() => { handleExportTurtle(); setRdfDropdownOpen(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      textAlign: 'left',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      borderRadius: 'var(--radius-sm)',
+                      margin: 4
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <FileText size={14} color="#3498DB" />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>Download Turtle</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>.ttl format</div>
+                    </div>
+                  </button>
+                  <div style={{ height: 1, background: 'var(--border-primary)', margin: '0 8px' }} />
+                  <button
+                    onClick={() => { handleExport(); setRdfDropdownOpen(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      textAlign: 'left',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      fontSize: 13,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      borderRadius: 'var(--radius-sm)',
+                      margin: 4
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Share2 size={14} color="#E74C3C" />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>RDF/XML</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>.rdf format (MS Fabric)</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {onFabricPush && (
               <button
