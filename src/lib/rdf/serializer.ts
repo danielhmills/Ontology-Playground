@@ -332,3 +332,156 @@ export function serializeToTurtle(
 
   return ttl;
 }
+
+/**
+ * Serialize an Ontology (and optional DataBindings) to JSON-LD format.
+ */
+export function serializeToJSONLD(
+  ontology: Ontology,
+  bindings: DataBinding[] = [],
+  includeContext: boolean = true,
+): string {
+  const baseUri = deriveBaseUri(ontology.name);
+
+  const doc: Record<string, unknown> = {};
+
+  // JSON-LD Context
+  if (includeContext) {
+    doc['@context'] = {
+      rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+      owl: 'http://www.w3.org/2002/07/owl#',
+      xsd: 'http://www.w3.org/2001/XMLSchema#',
+      ont: baseUri,
+    };
+  }
+
+  // Ontology declaration
+  doc['@id'] = baseUri;
+  doc['@type'] = 'owl:Ontology';
+  doc['rdfs:label'] = ontology.name;
+  if (ontology.description) {
+    doc['rdfs:comment'] = ontology.description;
+  }
+
+  // Classes (Entity Types)
+  const classes: unknown[] = [];
+  for (const entity of ontology.entityTypes) {
+    const className = capitalize(entity.id);
+    const cls: Record<string, unknown> = {
+      '@id': `ont:${className}`,
+      '@type': 'owl:Class',
+      'rdfs:label': entity.name,
+      'ont:icon': entity.icon,
+      'ont:color': entity.color,
+    };
+    if (entity.description) {
+      cls['rdfs:comment'] = entity.description;
+    }
+    classes.push(cls);
+  }
+  if (classes.length > 0) {
+    doc['owl:Class'] = classes;
+  }
+
+  // Data Properties
+  const dataProperties: unknown[] = [];
+  for (const entity of ontology.entityTypes) {
+    const className = capitalize(entity.id);
+    for (const prop of entity.properties) {
+      const propName = `${entity.id}_${prop.name}`;
+      const xsdType = XSD_TYPE_MAP[prop.type] || 'xsd:string';
+      const xsdLocalName = xsdType.split(':')[1];
+      const dp: Record<string, unknown> = {
+        '@id': `ont:${propName}`,
+        '@type': 'owl:DatatypeProperty',
+        'rdfs:label': prop.name,
+        'rdfs:domain': { '@id': `ont:${className}` },
+        'rdfs:range': { '@id': `xsd:${xsdLocalName}` },
+        'ont:propertyType': prop.type,
+      };
+      if (prop.description) {
+        dp['rdfs:comment'] = prop.description;
+      }
+      if (prop.isIdentifier) {
+        dp['ont:isIdentifier'] = true;
+      }
+      if (prop.unit) {
+        dp['ont:unit'] = prop.unit;
+      }
+      if (prop.values && prop.values.length > 0) {
+        dp['ont:enumValues'] = prop.values.join(',');
+      }
+      dataProperties.push(dp);
+    }
+  }
+  if (dataProperties.length > 0) {
+    doc['owl:DatatypeProperty'] = dataProperties;
+  }
+
+  // Object Properties (Relationships)
+  const objectProperties: unknown[] = [];
+  for (const rel of ontology.relationships) {
+    const fromClass = capitalize(rel.from);
+    const toClass = capitalize(rel.to);
+    const op: Record<string, unknown> = {
+      '@id': `ont:${rel.id}`,
+      '@type': 'owl:ObjectProperty',
+      'rdfs:label': rel.name,
+      'rdfs:domain': { '@id': `ont:${fromClass}` },
+      'rdfs:range': { '@id': `ont:${toClass}` },
+      'ont:cardinality': rel.cardinality,
+      'ont:fromEntityId': rel.from,
+      'ont:toEntityId': rel.to,
+    };
+    if (rel.description) {
+      op['rdfs:comment'] = rel.description;
+    }
+    objectProperties.push(op);
+
+    // Relationship attributes
+    if (rel.attributes && rel.attributes.length > 0) {
+      for (const attr of rel.attributes) {
+        const attrName = `${rel.id}_${attr.name}`;
+        objectProperties.push({
+          '@id': `ont:${attrName}`,
+          '@type': 'owl:DatatypeProperty',
+          'rdfs:label': attr.name,
+          'rdfs:comment': `Relationship attribute for ${rel.name}`,
+          'ont:relationshipAttributeOf': rel.id,
+          'ont:attributeType': attr.type,
+        });
+      }
+    }
+  }
+  if (objectProperties.length > 0) {
+    doc['owl:ObjectProperty'] = objectProperties;
+  }
+
+  // Data Bindings
+  if (bindings.length > 0) {
+    const dataBindings: unknown[] = [];
+    for (const binding of bindings) {
+      const className = capitalize(binding.entityTypeId);
+      const db: Record<string, unknown> = {
+        '@id': `ont:binding_${binding.entityTypeId}`,
+        '@type': 'ont:DataBinding',
+        'ont:boundClass': { '@id': `ont:${className}` },
+        'ont:boundEntityId': binding.entityTypeId,
+        'ont:source': binding.source,
+        'ont:table': binding.table,
+      };
+      const mappings: string[] = [];
+      for (const [propName, colName] of Object.entries(binding.columnMappings)) {
+        mappings.push(`${propName}=${colName}`);
+      }
+      if (mappings.length > 0) {
+        db['ont:columnMapping'] = mappings;
+      }
+      dataBindings.push(db);
+    }
+    doc['ont:DataBinding'] = dataBindings;
+  }
+
+  return JSON.stringify(doc, null, 2);
+}
