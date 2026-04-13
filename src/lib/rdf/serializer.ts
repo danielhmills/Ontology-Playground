@@ -12,6 +12,18 @@ export function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * Escape a string for use as a Turtle literal.
+ * Handles quotes, backslashes, and newlines.
+ */
+function escapeTurtle(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r');
+}
+
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -183,4 +195,140 @@ export function serializeToRDF(
   rdf += '</rdf:RDF>\n';
 
   return rdf;
+}
+
+/**
+ * Serialize an Ontology (and optional DataBindings) to Turtle (TTL) format.
+ */
+export function serializeToTurtle(
+  ontology: Ontology,
+  bindings: DataBinding[] = [],
+): string {
+  const baseUri = deriveBaseUri(ontology.name);
+
+  let ttl = '';
+
+  // Prefix declarations
+  ttl += '@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n';
+  ttl += '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n';
+  ttl += '@prefix owl: <http://www.w3.org/2002/07/owl#> .\n';
+  ttl += '@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n';
+  ttl += `@prefix ont: <${baseUri}> .\n`;
+  ttl += `@base <${baseUri}> .\n\n`;
+
+  // Ontology declaration
+  ttl += `<${baseUri}> a owl:Ontology ;\n`;
+  ttl += `    rdfs:label "${escapeTurtle(ontology.name)}" ;\n`;
+  if (ontology.description) {
+    ttl += `    rdfs:comment "${escapeTurtle(ontology.description)}" ;\n`;
+  }
+  ttl += '.\n\n';
+
+  // Entity Types as OWL Classes
+  ttl += '# =====================\n';
+  ttl += '# Entity Types (Classes)\n';
+  ttl += '# =====================\n\n';
+
+  for (const entity of ontology.entityTypes) {
+    const className = capitalize(entity.id);
+    ttl += `ont:${className} a owl:Class ;\n`;
+    ttl += `    rdfs:label "${escapeTurtle(entity.name)}" ;\n`;
+    if (entity.description) {
+      ttl += `    rdfs:comment "${escapeTurtle(entity.description)}" ;\n`;
+    }
+    ttl += `    ont:icon "${escapeTurtle(entity.icon)}" ;\n`;
+    ttl += `    ont:color "${escapeTurtle(entity.color)}" ;\n`;
+    ttl += '.\n\n';
+  }
+
+  // Data Properties (entity properties)
+  ttl += '# ================\n';
+  ttl += '# Data Properties\n';
+  ttl += '# ================\n\n';
+
+  for (const entity of ontology.entityTypes) {
+    const className = capitalize(entity.id);
+
+    for (const prop of entity.properties) {
+      const propName = `${entity.id}_${prop.name}`;
+      const xsdType = XSD_TYPE_MAP[prop.type] || 'xsd:string';
+      const xsdLocalName = xsdType.split(':')[1];
+
+      ttl += `ont:${propName} a owl:DatatypeProperty ;\n`;
+      ttl += `    rdfs:label "${escapeTurtle(prop.name)}" ;\n`;
+      ttl += `    rdfs:domain ont:${className} ;\n`;
+      ttl += `    rdfs:range xsd:${xsdLocalName} ;\n`;
+      if (prop.description) {
+        ttl += `    rdfs:comment "${escapeTurtle(prop.description)}" ;\n`;
+      }
+      if (prop.isIdentifier) {
+        ttl += '    ont:isIdentifier "true"^^xsd:boolean ;\n';
+      }
+      if (prop.unit) {
+        ttl += `    ont:unit "${escapeTurtle(prop.unit)}" ;\n`;
+      }
+      if (prop.values && prop.values.length > 0) {
+        ttl += `    ont:enumValues "${escapeTurtle(prop.values.join(','))}" ;\n`;
+      }
+      ttl += `    ont:propertyType "${escapeTurtle(prop.type)}" ;\n`;
+      ttl += '.\n\n';
+    }
+  }
+
+  // Object Properties (relationships)
+  ttl += '# ==================\n';
+  ttl += '# Object Properties\n';
+  ttl += '# ==================\n\n';
+
+  for (const rel of ontology.relationships) {
+    const fromClass = capitalize(rel.from);
+    const toClass = capitalize(rel.to);
+
+    ttl += `ont:${rel.id} a owl:ObjectProperty ;\n`;
+    ttl += `    rdfs:label "${escapeTurtle(rel.name)}" ;\n`;
+    ttl += `    rdfs:domain ont:${fromClass} ;\n`;
+    ttl += `    rdfs:range ont:${toClass} ;\n`;
+    if (rel.description) {
+      ttl += `    rdfs:comment "${escapeTurtle(rel.description)}" ;\n`;
+    }
+    ttl += `    ont:cardinality "${escapeTurtle(rel.cardinality)}" ;\n`;
+    ttl += `    ont:fromEntityId "${escapeTurtle(rel.from)}" ;\n`;
+    ttl += `    ont:toEntityId "${escapeTurtle(rel.to)}" ;\n`;
+    ttl += '.\n\n';
+
+    // Relationship attributes as separate data properties
+    if (rel.attributes && rel.attributes.length > 0) {
+      for (const attr of rel.attributes) {
+        const attrName = `${rel.id}_${attr.name}`;
+        ttl += `ont:${attrName} a owl:DatatypeProperty ;\n`;
+        ttl += `    rdfs:label "${escapeTurtle(attr.name)}" ;\n`;
+        ttl += `    rdfs:comment "Relationship attribute for ${escapeTurtle(rel.name)}" ;\n`;
+        ttl += `    ont:relationshipAttributeOf "${escapeTurtle(rel.id)}" ;\n`;
+        ttl += `    ont:attributeType "${escapeTurtle(attr.type)}" ;\n`;
+        ttl += '.\n\n';
+      }
+    }
+  }
+
+  // Data Bindings as structured annotations
+  if (bindings.length > 0) {
+    ttl += '# =============\n';
+    ttl += '# Data Bindings\n';
+    ttl += '# =============\n\n';
+
+    for (const binding of bindings) {
+      const className = capitalize(binding.entityTypeId);
+      ttl += `ont:binding_${binding.entityTypeId} a ont:DataBinding ;\n`;
+      ttl += `    ont:boundClass ont:${className} ;\n`;
+      ttl += `    ont:boundEntityId "${escapeTurtle(binding.entityTypeId)}" ;\n`;
+      ttl += `    ont:source "${escapeTurtle(binding.source)}" ;\n`;
+      ttl += `    ont:table "${escapeTurtle(binding.table)}" ;\n`;
+      for (const [propName, colName] of Object.entries(binding.columnMappings)) {
+        ttl += `    ont:columnMapping "${escapeTurtle(propName)}=${escapeTurtle(colName)}" ;\n`;
+      }
+      ttl += '.\n\n';
+    }
+  }
+
+  return ttl;
 }
