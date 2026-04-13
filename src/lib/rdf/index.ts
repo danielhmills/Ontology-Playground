@@ -1,2 +1,2 @@
-export { serializeToRDF, serializeToTurtle, escapeXml, deriveBaseUri } from './serializer';
+export { serializeToRDF, serializeToTurtle, serializeToJSONLD, escapeXml, deriveBaseUri } from './serializer';
 export { parseRDF, RDFParseError } from './parser';
