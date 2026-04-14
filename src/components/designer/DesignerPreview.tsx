@@ -268,7 +268,11 @@ function RdfPreview({ ontology, onImported, format }: RdfPreviewProps) {
 
   const darkMode = useAppStore((s) => s.darkMode);
   const hlTheme = darkMode ? RDF_HIGHLIGHT_DARK : RDF_HIGHLIGHT_LIGHT;
-  const highlightedRdf = useMemo(() => highlightRdf(rdfOutput, hlTheme), [rdfOutput, hlTheme]);
+  // Strip nanotation markers for display (keep in raw for copy/paste)
+  const displayRdf = format === 'rdf-turtle'
+    ? rdfOutput.replace(/^## Turtle Start ##\n/, '').replace(/\n## Turtle End ##$/, '')
+    : rdfOutput;
+  const highlightedRdf = useMemo(() => highlightRdf(displayRdf, hlTheme), [displayRdf, hlTheme]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(rdfOutput).then(() => {
