@@ -4,14 +4,14 @@ import fcose from 'cytoscape-fcose';
 import type { Core } from 'cytoscape';
 import { useDesignerStore } from '../../store/designerStore';
 import { useAppStore } from '../../store/appStore';
-import { serializeToRDF } from '../../lib/rdf/serializer';
+import { serializeToRDF, serializeToTurtle, serializeToJSONLD } from '../../lib/rdf/serializer';
 import { parseRDF } from '../../lib/rdf/parser';
 import { highlightRdf, RDF_HIGHLIGHT_DARK, RDF_HIGHLIGHT_LIGHT } from '../../lib/rdf/highlighter';
 
 cytoscape.use(fcose);
 
 export function DesignerPreview() {
-  const [activeTab, setActiveTab] = useState<'graph' | 'rdf'>('graph');
+  const [activeTab, setActiveTab] = useState<'graph' | 'rdf-xml' | 'rdf-turtle' | 'json-ld'>('graph');
   const { ontology, selectEntity, selectRelationship } = useDesignerStore();
   const darkMode = useAppStore((s) => s.darkMode);
 
@@ -25,22 +25,41 @@ export function DesignerPreview() {
           Graph
         </button>
         <button
-          className={`designer-tab ${activeTab === 'rdf' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rdf')}
+          className={`designer-tab ${activeTab === 'rdf-xml' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rdf-xml')}
         >
-          RDF
+          RDF/XML
+        </button>
+        <button
+          className={`designer-tab ${activeTab === 'rdf-turtle' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rdf-turtle')}
+        >
+          RDF (TURTLE)
+        </button>
+        <button
+          className={`designer-tab ${activeTab === 'json-ld' ? 'active' : ''}`}
+          onClick={() => setActiveTab('json-ld')}
+        >
+          JSON-LD
         </button>
       </div>
 
-      {activeTab === 'graph' ? (
+      {activeTab === 'graph' && (
         <GraphPreview
           ontology={ontology}
           darkMode={darkMode}
           onSelectEntity={selectEntity}
           onSelectRelationship={selectRelationship}
         />
-      ) : (
-        <RdfPreview ontology={ontology} onImported={() => setActiveTab('graph')} />
+      )}
+      {activeTab === 'rdf-xml' && (
+        <RdfPreview ontology={ontology} onImported={() => setActiveTab('graph')} format="rdf-xml" />
+      )}
+      {activeTab === 'rdf-turtle' && (
+        <RdfPreview ontology={ontology} onImported={() => setActiveTab('graph')} format="rdf-turtle" />
+      )}
+      {activeTab === 'json-ld' && (
+        <RdfPreview ontology={ontology} onImported={() => setActiveTab('graph')} format="json-ld" />
       )}
     </div>
   );
@@ -222,9 +241,10 @@ function GraphPreview({ ontology, darkMode, onSelectEntity, onSelectRelationship
 interface RdfPreviewProps {
   ontology: GraphPreviewProps['ontology'] & { name: string; description: string };
   onImported: () => void;
+  format: 'rdf-xml' | 'rdf-turtle' | 'json-ld';
 }
 
-function RdfPreview({ ontology, onImported }: RdfPreviewProps) {
+function RdfPreview({ ontology, onImported, format }: RdfPreviewProps) {
   const [copied, setCopied] = useState(false);
   const [importMode, setImportMode] = useState(false);
   const [importText, setImportText] = useState('');
@@ -233,9 +253,17 @@ function RdfPreview({ ontology, onImported }: RdfPreviewProps) {
 
   let rdfOutput: string;
   try {
-    rdfOutput = serializeToRDF(ontology as Parameters<typeof serializeToRDF>[0], []);
+    if (format === 'rdf-xml') {
+      rdfOutput = serializeToRDF(ontology as Parameters<typeof serializeToRDF>[0], []);
+    } else if (format === 'rdf-turtle') {
+      rdfOutput = serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []);
+    } else {
+      rdfOutput = serializeToJSONLD(ontology as Parameters<typeof serializeToJSONLD>[0], [], true);
+    }
   } catch {
-    rdfOutput = '<!-- Ontology is incomplete or invalid; fix errors to see RDF output -->';
+    rdfOutput = format === 'json-ld'
+      ? '{"error": "Ontology is incomplete or invalid; fix errors to see output"}'
+      : '<!-- Ontology is incomplete or invalid; fix errors to see output -->';
   }
 
   const darkMode = useAppStore((s) => s.darkMode);
@@ -287,11 +315,13 @@ function RdfPreview({ ontology, onImported }: RdfPreviewProps) {
           </>
         ) : (
           <>
-            <button className="designer-add-btn small" onClick={() => { setImportMode(true); setImportText(rdfOutput); }}>
-              Edit RDF
-            </button>
+            {format === 'rdf-xml' && (
+              <button className="designer-add-btn small" onClick={() => { setImportMode(true); setImportText(rdfOutput); }}>
+                Edit RDF
+              </button>
+            )}
             <button className="designer-add-btn small" onClick={handleCopy}>
-              {copied ? 'Copied!' : 'Copy RDF'}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </>
         )}
@@ -304,7 +334,7 @@ function RdfPreview({ ontology, onImported }: RdfPreviewProps) {
           className="designer-rdf-source designer-rdf-textarea"
           value={importText}
           onChange={(e) => { setImportText(e.target.value); setImportError(null); }}
-          placeholder="Paste or edit RDF/XML content here…"
+          placeholder={`Paste or edit ${format === 'rdf-xml' ? 'RDF/XML' : format === 'rdf-turtle' ? 'Turtle' : 'JSON-LD'} content here…`}
           autoFocus
           spellCheck={false}
         />
