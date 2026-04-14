@@ -256,7 +256,7 @@ function RdfPreview({ ontology, onImported, format }: RdfPreviewProps) {
     if (format === 'rdf-xml') {
       rdfOutput = serializeToRDF(ontology as Parameters<typeof serializeToRDF>[0], []);
     } else if (format === 'rdf-turtle') {
-      rdfOutput = serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []);
+      rdfOutput = '## Turtle Start ##\n' + serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []) + '\n## Turtle End ##';
     } else {
       rdfOutput = serializeToJSONLD(ontology as Parameters<typeof serializeToJSONLD>[0], [], true);
     }
