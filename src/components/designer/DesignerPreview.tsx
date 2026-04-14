@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import cytoscape from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 import type { Core } from 'cytoscape';
@@ -14,6 +14,48 @@ export function DesignerPreview() {
   const [activeTab, setActiveTab] = useState<'graph' | 'rdf-xml' | 'rdf-turtle' | 'json-ld'>('graph');
   const { ontology, selectEntity, selectRelationship } = useDesignerStore();
   const darkMode = useAppStore((s) => s.darkMode);
+
+  // Inject JSON-LD and Turtle as script tags for machine parsing
+  useLayoutEffect(() => {
+    const updateScriptTags = () => {
+      let jsonldScript = document.getElementById('ontology-jsonld') as HTMLScriptElement | null;
+      let turtleScript = document.getElementById('ontology-turtle') as HTMLScriptElement | null;
+
+      if (!jsonldScript) {
+        jsonldScript = document.createElement('script');
+        jsonldScript.id = 'ontology-jsonld';
+        jsonldScript.type = 'application/ld+json';
+        document.head.appendChild(jsonldScript);
+      }
+
+      if (!turtleScript) {
+        turtleScript = document.createElement('script');
+        turtleScript.id = 'ontology-turtle';
+        turtleScript.type = 'text/turtle';
+        document.head.appendChild(turtleScript);
+      }
+
+      try {
+        jsonldScript.textContent = serializeToJSONLD(ontology as Parameters<typeof serializeToJSONLD>[0], [], true);
+      } catch {
+        jsonldScript.textContent = '{"error": "Invalid ontology"}';
+      }
+
+      try {
+        turtleScript.textContent = serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []);
+      } catch {
+        turtleScript.textContent = '# Invalid ontology';
+      }
+    };
+
+    updateScriptTags();
+
+    return () => {
+      // Cleanup: remove script tags when component unmounts
+      document.getElementById('ontology-jsonld')?.remove();
+      document.getElementById('ontology-turtle')?.remove();
+    };
+  }, [ontology]);
 
   return (
     <div className="designer-preview">
@@ -256,7 +298,7 @@ function RdfPreview({ ontology, onImported, format }: RdfPreviewProps) {
     if (format === 'rdf-xml') {
       rdfOutput = serializeToRDF(ontology as Parameters<typeof serializeToRDF>[0], []);
     } else if (format === 'rdf-turtle') {
-      rdfOutput = '## Turtle Start ##\n' + serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []) + '\n## Turtle End ##';
+      rdfOutput = serializeToTurtle(ontology as Parameters<typeof serializeToTurtle>[0], []);
     } else {
       rdfOutput = serializeToJSONLD(ontology as Parameters<typeof serializeToJSONLD>[0], [], true);
     }
@@ -268,11 +310,7 @@ function RdfPreview({ ontology, onImported, format }: RdfPreviewProps) {
 
   const darkMode = useAppStore((s) => s.darkMode);
   const hlTheme = darkMode ? RDF_HIGHLIGHT_DARK : RDF_HIGHLIGHT_LIGHT;
-  // Strip nanotation markers for display (keep in raw for copy/paste)
-  const displayRdf = format === 'rdf-turtle'
-    ? rdfOutput.replace(/^## Turtle Start ##\n/, '').replace(/\n## Turtle End ##$/, '')
-    : rdfOutput;
-  const highlightedRdf = useMemo(() => highlightRdf(displayRdf, hlTheme), [displayRdf, hlTheme]);
+  const highlightedRdf = useMemo(() => highlightRdf(rdfOutput, hlTheme), [rdfOutput, hlTheme]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(rdfOutput).then(() => {
