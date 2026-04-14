@@ -222,7 +222,7 @@ export function serializeToTurtle(
   if (ontology.description) {
     ttl += `    rdfs:comment "${escapeTurtle(ontology.description)}" ;\n`;
   }
-  ttl += '.\n\n';
+  ttl = ttl.slice(0, -3) + '.\n\n';
 
   // Entity Types as OWL Classes
   ttl += '# =====================\n';
@@ -238,7 +238,7 @@ export function serializeToTurtle(
     }
     ttl += `    ont:icon "${escapeTurtle(entity.icon)}" ;\n`;
     ttl += `    ont:color "${escapeTurtle(entity.color)}" ;\n`;
-    ttl += '.\n\n';
+    ttl = ttl.slice(0, -3) + '.\n\n';
   }
 
   // Data Properties (entity properties)
@@ -271,7 +271,7 @@ export function serializeToTurtle(
         ttl += `    ont:enumValues "${escapeTurtle(prop.values.join(','))}" ;\n`;
       }
       ttl += `    ont:propertyType "${escapeTurtle(prop.type)}" ;\n`;
-      ttl += '.\n\n';
+      ttl = ttl.slice(0, -3) + '.\n\n';
     }
   }
 
@@ -294,7 +294,7 @@ export function serializeToTurtle(
     ttl += `    ont:cardinality "${escapeTurtle(rel.cardinality)}" ;\n`;
     ttl += `    ont:fromEntityId "${escapeTurtle(rel.from)}" ;\n`;
     ttl += `    ont:toEntityId "${escapeTurtle(rel.to)}" ;\n`;
-    ttl += '.\n\n';
+    ttl = ttl.slice(0, -3) + '.\n\n';
 
     // Relationship attributes as separate data properties
     if (rel.attributes && rel.attributes.length > 0) {
@@ -305,7 +305,7 @@ export function serializeToTurtle(
         ttl += `    rdfs:comment "Relationship attribute for ${escapeTurtle(rel.name)}" ;\n`;
         ttl += `    ont:relationshipAttributeOf "${escapeTurtle(rel.id)}" ;\n`;
         ttl += `    ont:attributeType "${escapeTurtle(attr.type)}" ;\n`;
-        ttl += '.\n\n';
+        ttl = ttl.slice(0, -3) + '.\n\n';
       }
     }
   }
@@ -326,7 +326,7 @@ export function serializeToTurtle(
       for (const [propName, colName] of Object.entries(binding.columnMappings)) {
         ttl += `    ont:columnMapping "${escapeTurtle(propName)}=${escapeTurtle(colName)}" ;\n`;
       }
-      ttl += '.\n\n';
+      ttl = ttl.slice(0, -3) + '.\n\n';
     }
   }
 
