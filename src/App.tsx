@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense, useLayoutEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { 
   Header, 
@@ -25,6 +25,7 @@ import {
 } from './components';
 import type { CommandItem } from './components';
 import { useAppStore } from './store/appStore';
+import { serializeToTurtle, serializeToJSONLD } from './lib/rdf/serializer';
 import { useDesignerStore } from './store/designerStore';
 import { useRoute } from './hooks/useRoute';
 import { navigate } from './lib/router';
@@ -54,7 +55,48 @@ function App() {
   const [toast, setToast] = useState<{ message: string; icon: string } | null>(null);
   const [mobilePanel, setMobilePanel] = useState<'graph' | 'quests' | 'inspector' | 'query'>('graph');
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const { darkMode, earnedBadges, loadOntology, toggleDarkMode } = useAppStore();
+  const { darkMode, earnedBadges, loadOntology, toggleDarkMode, currentOntology, dataBindings } = useAppStore();
+
+  // Inject JSON-LD and Turtle as script tags for machine parsing (app-wide)
+  useLayoutEffect(() => {
+    const updateScriptTags = () => {
+      let jsonldScript = document.getElementById('ontology-jsonld') as HTMLScriptElement | null;
+      let turtleScript = document.getElementById('ontology-turtle') as HTMLScriptElement | null;
+
+      if (!jsonldScript) {
+        jsonldScript = document.createElement('script');
+        jsonldScript.id = 'ontology-jsonld';
+        jsonldScript.type = 'application/ld+json';
+        document.head.appendChild(jsonldScript);
+      }
+
+      if (!turtleScript) {
+        turtleScript = document.createElement('script');
+        turtleScript.id = 'ontology-turtle';
+        turtleScript.type = 'text/turtle';
+        document.head.appendChild(turtleScript);
+      }
+
+      try {
+        jsonldScript.textContent = serializeToJSONLD(currentOntology, dataBindings, true);
+      } catch {
+        jsonldScript.textContent = '{"error": "Invalid ontology"}';
+      }
+
+      try {
+        turtleScript.textContent = serializeToTurtle(currentOntology, dataBindings);
+      } catch {
+        turtleScript.textContent = '# Invalid ontology';
+      }
+    };
+
+    updateScriptTags();
+
+    return () => {
+      document.getElementById('ontology-jsonld')?.remove();
+      document.getElementById('ontology-turtle')?.remove();
+    };
+  }, [currentOntology, dataBindings]);
 
   // Show toast when a new badge is earned
   useEffect(() => {
