@@ -423,24 +423,41 @@ export function parseTurtle(turtle: string): { ontology: Ontology; bindings: Dat
     }
   }
 
+  // Helper to extract subject from a triple pattern (handles <uri> or :prefixName)
+  const extractSubject = (block: string): string | null => {
+    const match = block.match(/^(?:<([^>]+)>|([a-zA-Z_][a-zA-Z0-9_]*:[a-zA-Z_][a-zA-Z0-9_]*)|(:[a-zA-Z_][a-zA-Z0-9_]*))/);
+    if (!match) return null;
+    return match[1] || match[2] || match[3] || null;
+  };
+
+  // Helper to check if block has rdf:type owl:XYZ (handles both "a" and "rdf:type")
+  const hasRdfType = (block: string, typeName: string): boolean => {
+    // Match "a" shorthand or "rdf:type" explicit
+    const typePattern = new RegExp(`(?:\\sa\\s+|rdf:type\\s+)(?:owl:|(?:<http://www.w3.org/2002/07/owl#>))${typeName}\\b`);
+    return typePattern.test(block);
+  };
+
   // First pass: extract ontology metadata
   for (const block of blocks) {
-    const ontMatch = block.match(/<([^>]+)>\s+a\s+(?:owl:|<http:\/\/www\.w3\.org\/2002\/07\/owl#>)Ontology/);
-    if (ontMatch) {
-      ontologyName = extractValue(block, 'rdfs:label') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#label>') || '';
-      ontologyDescription = extractValue(block, 'rdfs:comment') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#comment>') || '';
+    if (hasRdfType(block, 'Ontology')) {
+      const about = extractSubject(block);
+      if (about) {
+        ontologyName = extractValue(block, 'rdfs:label') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#label>') || '';
+        ontologyDescription = extractValue(block, 'rdfs:comment') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#comment>') || '';
+      }
     }
   }
 
   // Second pass: extract OWL Classes
   for (const block of blocks) {
-    const classMatch = block.match(/<([^>]+)>\s+a\s+(?:owl:|<http:\/\/www\.w3\.org\/2002\/07\/owl#>)Class/);
-    if (classMatch) {
-      const about = classMatch[1];
+    if (hasRdfType(block, 'Class')) {
+      const about = extractSubject(block);
+      if (!about) continue;
+
       const className = localNameFromUri(about);
       const entityId = uncapitalize(className);
-      const label = extractValue(block, 'rdfs:label') || className;
-      const description = extractValue(block, 'rdfs:comment') || '';
+      const label = extractValue(block, 'rdfs:label') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#label>') || className;
+      const description = extractValue(block, 'rdfs:comment') || extractValue(block, '<http://www.w3.org/2000/01/rdf-schema#comment>') || '';
       const icon = extractValue(block, 'ont:icon') || extractValue(block, '<http://example.org/ont#icon>') || '📦';
       const color = extractValue(block, 'ont:color') || extractValue(block, '<http://example.org/ont#color>') || '#0078D4';
 
@@ -457,9 +474,9 @@ export function parseTurtle(turtle: string): { ontology: Ontology; bindings: Dat
 
   // Third pass: extract DatatypeProperties
   for (const block of blocks) {
-    const propMatch = block.match(/<([^>]+)>\s+a\s+(?:owl:|<http:\/\/www\.w3\.org\/2002\/07\/owl#>)DatatypeProperty/);
-    if (propMatch) {
-      const about = propMatch[1];
+    if (hasRdfType(block, 'DatatypeProperty')) {
+      const about = extractSubject(block);
+      if (!about) continue;
       const label = extractValue(block, 'rdfs:label') || localNameFromUri(about);
       const domainUri = extractUri(block, 'rdfs:domain') || extractUri(block, '<http://www.w3.org/2000/01/rdf-schema#domain>');
       const rangeUri = extractUri(block, 'rdfs:range') || extractUri(block, '<http://www.w3.org/2000/01/rdf-schema#range>');
@@ -489,11 +506,12 @@ export function parseTurtle(turtle: string): { ontology: Ontology; bindings: Dat
 
   // Fourth pass: extract ObjectProperties (Relationships)
   for (const block of blocks) {
-    const propMatch = block.match(/<([^>]+)>\s+a\s+(?:owl:|<http:\/\/www\.w3\.org\/2002\/07\/owl#>)ObjectProperty/);
-    if (propMatch) {
-      const about = propMatch[1];
+    if (hasRdfType(block, 'ObjectProperty')) {
+      const about = extractSubject(block);
+      if (!about) continue;
+
       const relId = localNameFromUri(about);
-      const label = extractValue(block, 'rdfs:label') || relId;
+      const label = extractValue(block, 'rdfs:label') || localNameFromUri(about);
       const description = extractValue(block, 'rdfs:comment') || '';
 
       let fromId = uncapitalize(extractValue(block, 'ont:fromEntityId') || extractValue(block, '<http://example.org/ont#fromEntityId>') || '');
@@ -535,8 +553,9 @@ export function parseTurtle(turtle: string): { ontology: Ontology; bindings: Dat
 
   // Fifth pass: extract DataBindings
   for (const block of blocks) {
-    const bindingMatch = block.match(/_:\w+\s+a\s+(?:ont:|<http:\/\/example\.org\/ont#>)DataBinding/);
-    if (bindingMatch) {
+    // Match _:blankNode a ont:DataBinding (handles both prefixed and full URI)
+    const isDataBinding = /_:\w+\s+(?:a|rdf:type)\s+(?:ont:|<http:\/\/example\.org\/ont#>)DataBinding/.test(block);
+    if (isDataBinding) {
       const entityId = uncapitalize(extractValue(block, 'ont:boundEntityId') || extractValue(block, '<http://example.org/ont#boundEntityId>') || '');
       const source = extractValue(block, 'ont:source') || extractValue(block, '<http://example.org/ont#source>') || '';
       const table = extractValue(block, 'ont:table') || extractValue(block, '<http://example.org/ont#table>') || '';

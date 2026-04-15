@@ -466,13 +466,17 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
             </div>
 
             {/* URL Import */}
-            <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div
+              style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <input
                 type="text"
                 placeholder="Or enter URL to ontology..."
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlImport()}
+                onClick={(e) => e.stopPropagation()}
                 style={{
                   flex: 1,
                   padding: '8px 12px',
@@ -484,7 +488,10 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
                 }}
               />
               <button
-                onClick={handleUrlImport}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUrlImport();
+                }}
                 disabled={!urlInput.trim() || urlImportStatus === 'loading'}
                 style={{
                   padding: '8px 12px',
