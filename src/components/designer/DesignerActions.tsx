@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Download, AlertTriangle, CheckCircle, Upload, Github, FilePlus, Undo2, Redo2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Download, AlertTriangle, CheckCircle, Upload, Github, FilePlus, Undo2, Redo2, FileText, FileJson, Share2 } from 'lucide-react';
 import { useDesignerStore } from '../../store/designerStore';
 import type { ValidationError } from '../../store/designerStore';
 import { useAppStore } from '../../store/appStore';
-import { serializeToRDF } from '../../lib/rdf/serializer';
+import { serializeToRDF, serializeToTurtle, serializeToJSONLD } from '../../lib/rdf/serializer';
 import { navigate } from '../../lib/router';
 import { SubmitCatalogueModal } from './SubmitCatalogueModal';
 
@@ -14,29 +14,64 @@ export function DesignerToolbar() {
   const { ontology, validate, resetDraft, undo, redo, _past, _future } = useDesignerStore();
   const loadOntology = useAppStore((s) => s.loadOntology);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
   const canUndo = _past.length > 0;
   const canRedo = _future.length > 0;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setExportDropdownOpen(false);
+      }
+    };
+    if (exportDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [exportDropdownOpen]);
 
   const handleValidate = () => {
     validate();
   };
 
-  const handleExportRDF = () => {
+  const handleExport = (format: 'turtle' | 'jsonld' | 'rdfxml') => {
     const errors = validate();
-    // Allow download even with validation errors (user sees warnings in sidebar)
     try {
-      const rdf = serializeToRDF(ontology, []);
-      const blob = new Blob([rdf], { type: 'application/rdf+xml' });
+      let content: string;
+      let mimeType: string;
+      let extension: string;
+      const suffix = errors.length > 0 ? '-draft' : '';
+      const baseName = `${ontology.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'ontology'}${suffix}`;
+
+      if (format === 'turtle') {
+        content = serializeToTurtle(ontology, []);
+        mimeType = 'text/turtle';
+        extension = '.ttl';
+      } else if (format === 'jsonld') {
+        content = serializeToJSONLD(ontology, [], true);
+        mimeType = 'application/ld+json';
+        extension = '.jsonld';
+      } else {
+        content = serializeToRDF(ontology, []);
+        mimeType = 'application/rdf+xml';
+        extension = '.rdf';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const suffix = errors.length > 0 ? '-draft' : '';
-      a.download = `${ontology.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'ontology'}${suffix}.rdf`;
+      a.download = `${baseName}${extension}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
       // serialization failed — validation errors are shown in sidebar
     }
+    setExportDropdownOpen(false);
   };
 
   const handleLoadInPlayground = () => {
@@ -73,9 +108,92 @@ export function DesignerToolbar() {
           <CheckCircle size={14} /> Validate
         </button>
         <div className="designer-toolbar-sep" />
-        <button className="designer-toolbar-btn" onClick={handleExportRDF} title="Export RDF">
-          <Download size={14} /> Export RDF
-        </button>
+        <div ref={exportDropdownRef} style={{ position: 'relative' }}>
+          <button
+            className="designer-toolbar-btn"
+            onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+            title="Export RDF"
+          >
+            <Download size={14} /> Export RDF {exportDropdownOpen ? '▲' : '▼'}
+          </button>
+          {exportDropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              right: 0,
+              background: 'var(--bg-primary, #fff)',
+              border: '1px solid var(--border-primary, #ddd)',
+              borderRadius: 'var(--radius-md, 4px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              minWidth: 160
+            }}>
+              <button
+                className="designer-toolbar-dropdown-item"
+                onClick={() => handleExport('turtle')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  width: '100%',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary, #f5f5f5)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <FileText size={14} color="#3498DB" />
+                <span>Turtle</span>
+              </button>
+              <button
+                className="designer-toolbar-dropdown-item"
+                onClick={() => handleExport('jsonld')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  width: '100%',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary, #f5f5f5)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <FileJson size={14} color="#F39C12" />
+                <span>JSON-LD</span>
+              </button>
+              <button
+                className="designer-toolbar-dropdown-item"
+                onClick={() => handleExport('rdfxml')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 12px',
+                  width: '100%',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  textAlign: 'left'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary, #f5f5f5)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Share2 size={14} color="#E74C3C" />
+                <span>RDF/XML</span>
+              </button>
+            </div>
+          )}
+        </div>
         <button className="designer-toolbar-btn" onClick={handleLoadInPlayground} title="Load in Playground">
           <Upload size={14} /> Load in Playground
         </button>
