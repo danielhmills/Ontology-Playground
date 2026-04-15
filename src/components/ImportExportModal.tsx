@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2, Cloud } from 'lucide-react';
+import { X, Upload, Download, FileJson, AlertCircle, CheckCircle, RotateCcw, Copy, FileText, Table, Share2, Cloud, Link, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { serializeToRDF, serializeToTurtle, serializeToJSONLD } from '../lib/rdf/serializer';
-import { parseRDF, RDFParseError } from '../lib/rdf/parser';
+import { parseRDF, parseTurtle, parseJSONLD, RDFParseError } from '../lib/rdf/parser';
 import type { Ontology, DataBinding } from '../data/ontology';
 
 const LEGACY_FORMATS_ENABLED = import.meta.env.VITE_ENABLE_LEGACY_FORMATS === 'true';
@@ -54,6 +54,41 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
   const rdfDropdownRef = useRef<HTMLDivElement>(null);
   const [jsonldSubmenuOpen, setJsonldSubmenuOpen] = useState(false);
 
+  const [urlInput, setUrlInput] = useState('');
+  const [urlImportStatus, setUrlImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [urlErrorMessage, setUrlErrorMessage] = useState('');
+
+  const parseImportContent = (content: string, fileName: string): { ontology: Ontology; bindings: DataBinding[] } => {
+    const trimmed = content.trimStart();
+    const lowerName = fileName.toLowerCase();
+
+    // Detect format by extension and content
+    const isRdfXml = lowerName.endsWith('.rdf') || lowerName.endsWith('.owl') || lowerName.endsWith('.iq') ||
+                     trimmed.startsWith('<?xml') || trimmed.startsWith('<rdf:RDF') || trimmed.startsWith('<Ontology');
+    const isTurtle = lowerName.endsWith('.ttl') || lowerName.endsWith('.n3') ||
+                     (trimmed.startsWith('@prefix') || trimmed.startsWith('@base') ||
+                      /^\s*PREFIX\s+/i.test(trimmed) || /\s+a\s+owl:Class\s+/.test(trimmed));
+    const isJsonLd = lowerName.endsWith('.jsonld') || lowerName.endsWith('.json') ||
+                     trimmed.startsWith('{') || trimmed.startsWith('[');
+
+    if (isRdfXml) {
+      return parseRDF(content);
+    } else if (isTurtle) {
+      return parseTurtle(content);
+    } else if (isJsonLd) {
+      return parseJSONLD(content);
+    } else if (LEGACY_FORMATS_ENABLED && trimmed.startsWith('{')) {
+      // Legacy JSON format
+      const parsed = JSON.parse(content);
+      if (!parsed.ontology || !parsed.ontology.entityTypes || !parsed.ontology.relationships) {
+        throw new Error('Invalid ontology structure. Must have ontology.entityTypes and ontology.relationships.');
+      }
+      return { ontology: parsed.ontology, bindings: parsed.bindings || [] };
+    }
+
+    throw new Error(`Cannot detect format for "${fileName}". Supported formats: RDF/XML (.rdf, .owl), Turtle (.ttl), JSON-LD (.jsonld, .json)`);
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -62,35 +97,7 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
     reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        const fileName = file.name.toLowerCase();
-        const trimmed = content.trimStart();
-        const isRdfExt = fileName.endsWith('.rdf') || fileName.endsWith('.owl') || fileName.endsWith('.iq');
-        const isXmlContent = trimmed.startsWith('<?xml') || trimmed.startsWith('<rdf:RDF');
-
-        let ontology: Ontology;
-        let bindings: DataBinding[] = [];
-
-        if (isRdfExt || isXmlContent) {
-          // Parse as RDF/OWL
-          const result = parseRDF(content);
-          ontology = result.ontology;
-          bindings = result.bindings;
-        } else if (LEGACY_FORMATS_ENABLED && (fileName.endsWith('.json') || trimmed.startsWith('{'))) {
-          // Parse as JSON (legacy)
-          const parsed = JSON.parse(content);
-
-          if (!parsed.ontology || !parsed.ontology.entityTypes || !parsed.ontology.relationships) {
-            throw new Error('Invalid ontology structure. Must have ontology.entityTypes and ontology.relationships.');
-          }
-
-          ontology = parsed.ontology;
-          bindings = parsed.bindings || [];
-        } else {
-          const supported = LEGACY_FORMATS_ENABLED
-            ? 'an RDF/OWL (.rdf, .owl, .iq) or JSON (.json)'
-            : 'an RDF/OWL (.rdf, .owl, .iq)';
-          throw new Error(`Unsupported file format: "${file.name}". Please import ${supported} file.`);
-        }
+        const { ontology, bindings } = parseImportContent(content, file.name);
 
         // Fall back to filename (without extension) if no ontology name was parsed
         if (!ontology.name) {
@@ -113,6 +120,45 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleUrlImport = async () => {
+    if (!urlInput.trim()) return;
+    setUrlImportStatus('loading');
+    setUrlErrorMessage('');
+
+    try {
+      const response = await fetch(urlInput.trim());
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      }
+      const content = await response.text();
+
+      // Try to extract filename from URL for format detection
+      const urlPath = new URL(urlInput.trim()).pathname;
+      const fileName = urlPath.split('/').pop() || 'ontology.rdf';
+
+      const { ontology, bindings } = parseImportContent(content, fileName);
+
+      if (!ontology.name) {
+        ontology.name = fileName.replace(/\.[^.]+$/, '') || 'Imported from URL';
+      }
+
+      loadOntology(ontology, bindings);
+      setUrlImportStatus('success');
+      setTimeout(() => {
+        setUrlImportStatus('idle');
+        setUrlInput('');
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setUrlImportStatus('error');
+      if (err instanceof RDFParseError) {
+        setUrlErrorMessage(`RDF parse error: ${err.message}`);
+      } else {
+        setUrlErrorMessage(err instanceof Error ? err.message : 'Failed to import from URL');
+      }
+    }
   };
 
   const handleExport = () => {
@@ -397,8 +443,8 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
           >
             <input 
               ref={fileInputRef}
-              type="file" 
-              accept={LEGACY_FORMATS_ENABLED ? '.json,.rdf,.owl,.iq' : '.rdf,.owl,.iq'}
+              type="file"
+              accept={LEGACY_FORMATS_ENABLED ? '.json,.jsonld,.rdf,.owl,.iq,.ttl,.n3' : '.jsonld,.rdf,.owl,.iq,.ttl,.n3'}
               onChange={handleFileSelect}
               style={{ display: 'none' }}
             />
@@ -416,8 +462,58 @@ export function ImportExportModal({ onClose, onFabricPush }: ImportExportModalPr
             </div>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Import Ontology</div>
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-              {LEGACY_FORMATS_ENABLED ? 'Drop JSON or RDF/OWL file here' : 'Drop RDF/OWL (.rdf, .owl, .iq) file here'}
+              Drop RDF/XML, Turtle, JSON-LD, or JSON file here
             </div>
+
+            {/* URL Import */}
+            <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Or enter URL to ontology..."
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleUrlImport()}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-primary)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+              <button
+                onClick={handleUrlImport}
+                disabled={!urlInput.trim() || urlImportStatus === 'loading'}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  background: urlImportStatus === 'success' ? 'var(--ms-green)' : 'var(--ms-blue)',
+                  color: 'white',
+                  cursor: urlInput.trim() && urlImportStatus !== 'loading' ? 'pointer' : 'not-allowed',
+                  opacity: urlInput.trim() && urlImportStatus !== 'loading' ? 1 : 0.6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                {urlImportStatus === 'loading' ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Link size={14} />}
+                {urlImportStatus === 'success' ? 'Imported!' : 'Import'}
+              </button>
+            </div>
+            {urlImportStatus === 'error' && (
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ms-red)', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                <AlertCircle size={12} /> {urlErrorMessage}
+              </div>
+            )}
+            {urlImportStatus === 'success' && (
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ms-green)', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                <CheckCircle size={12} /> Successfully imported from URL!
+              </div>
+            )}
           </div>
 
           <div 
