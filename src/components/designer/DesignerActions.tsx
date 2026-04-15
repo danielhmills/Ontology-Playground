@@ -147,7 +147,7 @@ export function DesignerToolbar() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <FileText size={14} color="#3498DB" />
-                <span>Turtle</span>
+                <span style={{ color: 'white' }}>Turtle</span>
               </button>
               <button
                 className="designer-toolbar-dropdown-item"
@@ -168,7 +168,7 @@ export function DesignerToolbar() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <FileJson size={14} color="#F39C12" />
-                <span>JSON-LD</span>
+                <span style={{ color: 'white' }}>JSON-LD</span>
               </button>
               <button
                 className="designer-toolbar-dropdown-item"
@@ -189,7 +189,7 @@ export function DesignerToolbar() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <Share2 size={14} color="#E74C3C" />
-                <span>RDF/XML</span>
+                <span style={{ color: 'white' }}>RDF/XML</span>
               </button>
             </div>
           )}
